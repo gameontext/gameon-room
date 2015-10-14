@@ -1,0 +1,19 @@
+<server description="Game On! Room Service">
+
+    <!-- Enable features -->
+    <featureManager>
+		<feature>websocket-1.1</feature>
+	    <feature>localConnector-1.0</feature>
+        <feature>jaxrs-2.0</feature>
+        <feature>cdi-1.2</feature>
+    </featureManager>
+
+    <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
+    <httpEndpoint httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint"/>
+
+
+    <applicationMonitor updateTrigger="mbean"/>
+	<logging traceSpecification="*=info" />
+
+    <webApplication id="gameon-room-app" location="gameon-room-app.war" contextRoot="gameRoom" />
+</server>
