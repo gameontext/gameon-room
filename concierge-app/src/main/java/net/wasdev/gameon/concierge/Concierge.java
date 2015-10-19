@@ -59,6 +59,11 @@ public class Concierge extends Application {
 		}
 		return returnedRoom;
 	}
+
+
+	public void registerRoom(Room room) {
+		roomDirectory.put(room.getRoomName(), room);
+	}
 	
 	
 }

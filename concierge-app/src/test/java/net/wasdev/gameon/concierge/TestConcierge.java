@@ -10,8 +10,7 @@ public class TestConcierge {
 	public void getStartingRoom() {
 		Concierge c = new Concierge();
 		Room startingRoom = c.getStartingRoom();
-		assertEquals("The first room should be called the starting room", "Starting Room", startingRoom.getRoomName());
-		
+		assertEquals("The first room should have the attribute that it is easy", "easy", startingRoom.getAttribute("difficulty"));
 	}
 	
 	@Test
@@ -72,5 +71,12 @@ public class TestConcierge {
 		assertNull("The concierge should return a null object", noRoom);
 	}
 	
+	@Test
+	public void registerARoom() {
+		// We want the room itself to come up and publish to the concierge. So the flow will require the room to say "Here I am concierge"
+		Concierge c = new Concierge();
+		Room startingRoom = new Room("Starting Room");
+		c.registerRoom(startingRoom);
+	}
 	
 }

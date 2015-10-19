@@ -2,3 +2,5 @@ rootProject.name = 'gameon-room'
 
 include 'room-app'
 include 'room-wlpcfg'
+include 'concierge-app'
+include 'concierge-wlpcfg'

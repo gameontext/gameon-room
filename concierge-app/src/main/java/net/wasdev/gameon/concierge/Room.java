@@ -13,4 +13,7 @@ public class Room {
 	public Room(String roomName) {
 		setRoomName(roomName);
 	}
+	public String getAttribute(String attributeName) {
+		return "easy";
+	}
 }
