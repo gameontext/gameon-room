@@ -1,5 +1,7 @@
 package net.wasdev.gameon.concierge;
 
+import java.util.List;
+
 public class Room {
 
 	private String roomName;
@@ -15,5 +17,12 @@ public class Room {
 	}
 	public String getAttribute(String attributeName) {
 		return "easy";
+	}
+	public void setAttribute(String name, String value) {
+		// TODO Auto-generated method stub
+		
+	}
+	public List<String> getExits() {
+		return null;
 	}
 }

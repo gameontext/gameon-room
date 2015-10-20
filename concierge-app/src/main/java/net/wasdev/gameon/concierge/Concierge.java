@@ -20,15 +20,14 @@ public class Concierge extends Application {
 
 	List<Connection> connections = new ArrayList<Connection>();
 	Map<String, Room> roomDirectory = new HashMap<String, Room>();
-
-	Room startingRoom = null;
+	Map<String, Room> startingRooms = new HashMap<String, Room>();
 	
 	public Concierge() {
 		roomDirectory.put("North Room", new Room("North Room"));
 		roomDirectory.put("East Room", new Room("East Room"));
 		roomDirectory.put("Starting Room", new Room("Starting Room"));
-		startingRoom = roomDirectory.get("Starting Room");
-		
+
+		Room startingRoom = roomDirectory.get("Starting Room");
 		Room northRoom = roomDirectory.get("North Room");
 		Room eastRoom = roomDirectory.get("East Room");
 		
@@ -42,7 +41,10 @@ public class Concierge extends Application {
 	@Path("startingRoom")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Room getStartingRoom() {
-		return startingRoom;
+		if (!startingRooms.isEmpty()) {
+			return startingRooms.values().iterator().next();
+		}
+		return null;
 	}
 	
 	
@@ -60,9 +62,31 @@ public class Concierge extends Application {
 		return returnedRoom;
 	}
 
-
+	@GET
+	@Path("registerRoom")
+	@Consumes(MediaType.APPLICATION_JSON)
 	public void registerRoom(Room room) {
 		roomDirectory.put(room.getRoomName(), room);
+		String difficulty = room.getAttribute("difficulty");
+		if (difficulty != null) {
+			difficulty = "easy";
+		}
+			
+		if (difficulty.equals("easy")) {
+			startingRooms.put(room.getRoomName(), room);
+		}
+
+		// General policy is that we hook rooms in graduated stages of complexity.
+
+		// Medium room, medium room, hard room, easy room
+		// Hard room - hard room, medium room, easy room
+		if (difficulty.equals("easy")) {
+			// Easy room - easy room, medium room, hard room
+			
+		}
+		
+		
+		
 	}
 	
 	

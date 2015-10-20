@@ -5,28 +5,35 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class TestConcierge {
-
+	
+	@Test
+	public void registerARoom() {
+		// We want the room itself to come up and publish to the concierge. So the flow will require the room to say "Here I am concierge"
+		Concierge c = new Concierge();
+		Room startingRoom = new Room("Starting Room");
+		c.registerRoom(startingRoom);
+	}
+	
 	@Test
 	public void getStartingRoom() {
-		Concierge c = new Concierge();
-		Room startingRoom = c.getStartingRoom();
-		assertEquals("The first room should have the attribute that it is easy", "easy", startingRoom.getAttribute("difficulty"));
+		Concierge c = addEasyStartingRoom();
+		Room theSameRoom = c.getStartingRoom();
+		assertEquals("The concierge should have a starting room called 'Starting Room'", "Starting Room", theSameRoom.getRoomName());
 	}
 	
 	@Test
 	public void goFromStartRoomToNorthRoom() {
-		Concierge c = new Concierge();
+		Concierge c = addEasyStartingRoom();
 		Room startingRoom = c.getStartingRoom();
 		assertEquals("The first room should be called the starting room", "Starting Room", startingRoom.getRoomName());
 		
 		Room northRoom = c.exitRoom(startingRoom, "North");
 		assertEquals("The starting room should connect to the northern room from the starting room's north connection", "North Room", northRoom.getRoomName());
-		
 	}
 	
 	@Test
 	public void goFromNorthRoomToEastRoom() {
-		Concierge c = new Concierge();
+		Concierge c = addEasyStartingRoom();
 		
 		Room startingRoom = c.getStartingRoom();
 		assertEquals("The first room should be called the starting room", "Starting Room", startingRoom.getRoomName());
@@ -54,7 +61,7 @@ public class TestConcierge {
 	 */
 	@Test
 	public void goFromNorthRoomToEastRoomAndBackAgain() {
-		Concierge c = new Concierge();
+		Concierge c = addEasyStartingRoom();
 		Room northRoom = c.exitRoom(c.getStartingRoom(), "North");
 		assertEquals("The concierge should be able to find the north room", "North Room", northRoom.getRoomName());
 		Room eastRoom = c.exitRoom(northRoom, "East");
@@ -66,17 +73,17 @@ public class TestConcierge {
 	
 	@Test
 	public void attemptToMoveThroughBlockedDoor() {
-		Concierge c = new Concierge();
+		Concierge c = addEasyStartingRoom();
 		Room noRoom = c.exitRoom(c.getStartingRoom(), "South");
 		assertNull("The concierge should return a null object", noRoom);
 	}
-	
-	@Test
-	public void registerARoom() {
-		// We want the room itself to come up and publish to the concierge. So the flow will require the room to say "Here I am concierge"
+
+	private Concierge addEasyStartingRoom() {
 		Concierge c = new Concierge();
-		Room startingRoom = new Room("Starting Room");
-		c.registerRoom(startingRoom);
+		Room anEasyRoom = new Room("Starting Room");
+		anEasyRoom.setAttribute("difficulty", "easy");
+		c.registerRoom(anEasyRoom);
+		return c;
 	}
 	
 }
