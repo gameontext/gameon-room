@@ -1,4 +1,4 @@
-package net.wasdev.gameon.concierge;
+package net.wasdev.gameon.room.common;
 
 import java.util.List;
 

@@ -13,6 +13,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 
+import net.wasdev.gameon.room.common.Room;
+
 @ApplicationPath("")
 @Path("concierge")
 public class Concierge extends Application {

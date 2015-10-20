@@ -1,6 +1,7 @@
 package net.wasdev.gameon.concierge;
 
 import static org.junit.Assert.*;
+import net.wasdev.gameon.room.common.Room;
 
 import org.junit.Test;
 

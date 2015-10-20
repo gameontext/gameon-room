@@ -1,5 +1,7 @@
 package net.wasdev.gameon.concierge;
 
+import net.wasdev.gameon.room.common.Room;
+
 public class Connection {
 
 	private Room startRoom;
