@@ -14,6 +14,7 @@
 
     <applicationMonitor updateTrigger="mbean"/>
 	<logging traceSpecification="*=info" />
-
+<!-- 
     <webApplication id="room-app" location="room-app-1.0.war" contextRoot="gameRoom" />
+ -->
 </server>
