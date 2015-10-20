@@ -1,10 +1,6 @@
 package net.wasdev.gameon.concierge;
 
-<<<<<<< Upstream, based on origin/master
-import net.wasdev.gameon.room.common.Room;
-=======
 import java.util.UUID;
->>>>>>> 174a249 Simple 2D room placement
 
 public class Connection {
 

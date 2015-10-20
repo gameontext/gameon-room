@@ -2,6 +2,8 @@ package net.wasdev.gameon.concierge;
 
 import java.util.UUID;
 
+import net.wasdev.gameon.room.common.Room;
+
 public class Simple2DPlacement implements PlacementStrategy {
 	
 	UUID[][] roomGrid = new UUID[10][10];
