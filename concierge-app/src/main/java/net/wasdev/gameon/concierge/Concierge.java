@@ -1,9 +1,8 @@
 package net.wasdev.gameon.concierge;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
@@ -19,76 +18,45 @@ import net.wasdev.gameon.room.common.Room;
 @Path("concierge")
 public class Concierge extends Application {
 
-
-	List<Connection> connections = new ArrayList<Connection>();
-	Map<String, Room> roomDirectory = new HashMap<String, Room>();
-	Map<String, Room> startingRooms = new HashMap<String, Room>();
+	Map<UUID, Room> roomDirectory = new HashMap<UUID, Room>();
+	Room startingRoom = null;
 	
-	public Concierge() {
-		roomDirectory.put("North Room", new Room("North Room"));
-		roomDirectory.put("East Room", new Room("East Room"));
-		roomDirectory.put("Starting Room", new Room("Starting Room"));
-
-		Room startingRoom = roomDirectory.get("Starting Room");
-		Room northRoom = roomDirectory.get("North Room");
-		Room eastRoom = roomDirectory.get("East Room");
-		
-		connections.add(new Connection(startingRoom, northRoom, "North"));
-		connections.add(new Connection(northRoom, eastRoom, "East"));
-		connections.add(new Connection(eastRoom, northRoom, "West"));
-	}
-	
+	PlacementStrategy ps = new Simple2DPlacement();
 	
 	@GET
 	@Path("startingRoom")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Room getStartingRoom() {
-		if (!startingRooms.isEmpty()) {
-			return startingRooms.values().iterator().next();
-		}
-		return null;
+		return startingRoom;
 	}
-	
 	
 	@GET
 	@Path("findConnnectedRoom")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Room exitRoom(Room currentRoom, String exitName) {
-		Room returnedRoom = null;
-		for (Connection connection : connections) {
-			if (connection.getStartRoom().getRoomName().equals(currentRoom.getRoomName()) && exitName.equals(connection.getStartingEntrance())) {
-				returnedRoom = connection.getEndRoom();
-			}
+	public Room exitRoom(UUID currentRoom, String exitName) {
+		Room nextRoom = null;
+		UUID nextRoomUUID = ps.getConnectingRoom(currentRoom, exitName);
+		if (nextRoomUUID != null) {
+			nextRoom = roomDirectory.get(nextRoomUUID);
 		}
-		return returnedRoom;
+		return nextRoom;
 	}
 
 	@GET
 	@Path("registerRoom")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public void registerRoom(Room room) {
-		roomDirectory.put(room.getRoomName(), room);
-		String difficulty = room.getAttribute("difficulty");
-		if (difficulty != null) {
-			difficulty = "easy";
-		}
-			
-		if (difficulty.equals("easy")) {
-			startingRooms.put(room.getRoomName(), room);
-		}
-
-		// General policy is that we hook rooms in graduated stages of complexity.
-
-		// Medium room, medium room, hard room, easy room
-		// Hard room - hard room, medium room, easy room
-		if (difficulty.equals("easy")) {
-			// Easy room - easy room, medium room, hard room
-			
+	public UUID registerRoom(Room room) {
+	
+		if (startingRoom == null) {
+			startingRoom = room;
 		}
 		
-		
-		
+		UUID roomUUID = UUID.randomUUID();
+		room.setAssignedID(roomUUID);
+		roomDirectory.put(roomUUID, room);
+		ps.placeRoom(roomUUID, room);
+		return roomUUID;
 	}
 	
 	

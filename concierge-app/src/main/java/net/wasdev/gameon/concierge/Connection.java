@@ -1,33 +1,31 @@
 package net.wasdev.gameon.concierge;
 
+<<<<<<< Upstream, based on origin/master
 import net.wasdev.gameon.room.common.Room;
+=======
+import java.util.UUID;
+>>>>>>> 174a249 Simple 2D room placement
 
 public class Connection {
 
-	private Room startRoom;
-	private Room endRoom;
+	private UUID startRoom;
+	private UUID endRoom;
 	private String startingEntrance;
-	public Connection(Room startingRoom, Room endRoom, String startingEntrance) {
+	public Connection(UUID startingRoom, UUID endRoom, String startingEntrance) {
 		this.startingEntrance = startingEntrance;
 		this.startRoom = startingRoom;
 		this.endRoom = endRoom;
 	}
-	public Room getStartRoom() {
+	public UUID getStartRoom() {
 		return startRoom;
 	}
-	public void setStartRoom(Room startRoom) {
-		this.startRoom = startRoom;
-	}
-	public Room getEndRoom() {
+
+	public UUID getEndRoom() {
 		return endRoom;
 	}
-	public void setEndRoom(Room endRoom) {
-		this.endRoom = endRoom;
-	}
+
 	public String getStartingEntrance() {
 		return startingEntrance;
 	}
-	public void setStartingEntrance(String startingEntrance) {
-		this.startingEntrance = startingEntrance;
-	}
+
 }
