@@ -21,7 +21,7 @@ public class Concierge extends Application {
 	Map<UUID, Room> roomDirectory = new HashMap<UUID, Room>();
 	Room startingRoom = null;
 	
-	PlacementStrategy ps = new Simple2DPlacement();
+	PlacementStrategy ps = new DynamicGrowthPlacement();
 	
 	@GET
 	@Path("startingRoom")
