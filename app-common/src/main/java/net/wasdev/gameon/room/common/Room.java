@@ -1,9 +1,12 @@
 package net.wasdev.gameon.room.common;
 
 import java.util.List;
+import java.util.UUID;
 
 public class Room {
 
+	private UUID assignedID;
+	
 	private String roomName;
 	
 	public String getRoomName() {
@@ -19,10 +22,15 @@ public class Room {
 		return "easy";
 	}
 	public void setAttribute(String name, String value) {
-		// TODO Auto-generated method stub
-		
 	}
 	public List<String> getExits() {
 		return null;
+	}
+	public UUID getAssignedID() {
+		return assignedID;
+	}
+	
+	public void setAssignedID(UUID assignedID) {
+		this.assignedID = assignedID;
 	}
 }
