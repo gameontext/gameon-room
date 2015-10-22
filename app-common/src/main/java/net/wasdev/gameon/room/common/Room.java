@@ -37,4 +37,8 @@ public class Room {
 	public void setAssignedID(UUID assignedID) {
 		this.assignedID = assignedID;
 	}
+	public void setExits(List<Exit> exits) {
+		// TODO Auto-generated method stub
+		
+	}
 }

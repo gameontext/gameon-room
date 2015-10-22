@@ -1,9 +1,13 @@
 package net.wasdev.gameon.concierge;
 
 import static org.junit.Assert.*;
+
+import net.wasdev.gameon.room.common.RegistrationResponse;
 import net.wasdev.gameon.room.common.Room;
 
 import java.util.UUID;
+
+import javax.ws.rs.core.Response;
 
 import org.junit.Test;
 
@@ -38,7 +42,7 @@ import org.junit.Test;
  *   
  *   (Starting Room) <-> (East Room) <-> (Far East Room)
  */
-public class TestConcierge {
+public class Test2DConcierge {
 	
 	@Test
 	public void registerARoom() {
