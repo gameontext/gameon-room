@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
@@ -21,7 +22,7 @@ public class Concierge extends Application {
 	Map<UUID, Room> roomDirectory = new HashMap<UUID, Room>();
 	Room startingRoom = null;
 	
-	PlacementStrategy ps = new DynamicGrowthPlacement();
+	PlacementStrategy ps = new Simple2DPlacement();
 	
 	@GET
 	@Path("startingRoom")
@@ -43,7 +44,7 @@ public class Concierge extends Application {
 		return nextRoom;
 	}
 
-	@GET
+	@POST
 	@Path("registerRoom")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public UUID registerRoom(Room room) {
