@@ -14,7 +14,7 @@
 
     <applicationMonitor updateTrigger="mbean"/>
 	<logging traceSpecification="*=info" />
-<!-- 
-    <webApplication id="room-app" location="room-app-1.0.war" contextRoot="gameRoom" />
- -->
+	
+	<!-- This is required to prevent the web apps from being lazily loaded -->
+	<webContainer deferServletLoad="false"/>
 </server>

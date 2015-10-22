@@ -9,6 +9,10 @@ public class Room {
 	
 	private String roomName;
 	
+	public Room() {
+		//no-args constructor to allow JSON serialisation
+	}
+	
 	public String getRoomName() {
 		return roomName;
 	}
