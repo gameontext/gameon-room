@@ -57,7 +57,7 @@ public class Concierge extends Application {
 	@Path("registerRoom")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public UUID registerRoom(Room room) {
-	
+		System.out.println("Processing registration for : \n" + room.toString());
 		if (startingRoom == null) {
 			startingRoom = room;
 		}
