@@ -18,6 +18,7 @@ package net.wasdev.gameon.room;
 public interface Constants {
 	// A field enum or just free-form?
 	String USERNAME = "username";
+	String USERID = "userId";
 	String BOOKMARK = "bookmark";
 	String CONTENT = "content";
 	String LOCATION = "location";
@@ -25,5 +26,6 @@ public interface Constants {
 	String NAME = "name";
 	String DESCRIPTION = "description";
 	String EXITS = "exits";
+	String EXITID = "exitId";
 	String STATE = "state";
 }
