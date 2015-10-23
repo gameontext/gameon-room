@@ -36,7 +36,7 @@ public class Concierge extends Application {
 	}
 
 	public UUID registerRoom(Room room) {
-	
+		System.out.println("Processing registration for : \n" + room.toString());
 		if (startingRoom == null) {
 			startingRoom = room;
 		}
