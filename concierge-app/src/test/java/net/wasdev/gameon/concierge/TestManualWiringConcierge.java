@@ -54,8 +54,8 @@ public class TestManualWiringConcierge {
 		
 		Room secondRoomAsRegistered = new Room("Second Room");
 		List<Exit> secondRoomExits = new ArrayList<Exit>();
-		secondRoomExits.add(new Exit("South", "StartingRoom"));
-		anEasyRoom.setExits(secondRoomExits);
+		secondRoomExits.add(new Exit("South", "Starting Room"));
+		secondRoomAsRegistered.setExits(secondRoomExits);
 		UUID secondRoomUUID = c.registerRoom(secondRoomAsRegistered);
  		Room secondRoomAsFound = c.exitRoom(startingRoomUUID, "North");
 		assertEquals("The secondRoom should be returned", secondRoomUUID, secondRoomAsFound.getAssignedID());

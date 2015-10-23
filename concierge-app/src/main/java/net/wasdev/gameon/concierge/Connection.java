@@ -1,22 +1,22 @@
 package net.wasdev.gameon.concierge;
 
-import java.util.UUID;
+import net.wasdev.gameon.room.common.Room;
 
 public class Connection {
 
-	private UUID startRoom;
-	private UUID endRoom;
+	private Room startRoom;
+	private Room endRoom;
 	private String startingEntrance;
-	public Connection(UUID startingRoom, UUID endRoom, String startingEntrance) {
+	public Connection(Room startingRoom, Room endRoom, String startingEntrance) {
 		this.startingEntrance = startingEntrance;
 		this.startRoom = startingRoom;
 		this.endRoom = endRoom;
 	}
-	public UUID getStartRoom() {
+	public Room getStartRoom() {
 		return startRoom;
 	}
 
-	public UUID getEndRoom() {
+	public Room getEndRoom() {
 		return endRoom;
 	}
 
