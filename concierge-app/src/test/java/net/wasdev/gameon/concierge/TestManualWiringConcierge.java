@@ -21,7 +21,7 @@ public class TestManualWiringConcierge {
 	public void registerARoom() {
 		// We want the room itself to come up and publish to the concierge. So the flow will require the room to say "Here I am concierge"
 		Concierge c = addEasyStartingRoom();
-		assertEquals("The start room should be the first room we add", "Starting Room", c.getStartingRoom().getRoomName());
+		assertEquals("The start room should be the first room we add", "Starting Room", c.getStartingRoom().getRoomId());
 	}
 
 //	@Test
