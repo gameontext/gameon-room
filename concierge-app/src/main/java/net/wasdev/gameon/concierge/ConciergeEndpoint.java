@@ -7,6 +7,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
@@ -29,11 +30,11 @@ public class ConciergeEndpoint extends Application {
 	}
 	
 	@GET
-	@Path("findConnnectedRoom")
+	@Path("rooms/{roomId}/{exitName}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response exitRoom(UUID currentRoom, String exitName) {
-		return Response.ok(c.exitRoom(currentRoom, exitName)).build();
+	public Response exitRoom(@PathParam("roomId") String roomId, @PathParam("roomID") String exitName) {
+		return Response.ok(c.exitRoom(roomId, exitName)).build();
 	}
 
 	@POST

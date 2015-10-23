@@ -13,8 +13,6 @@
 
 
     <applicationMonitor updateTrigger="mbean"/>
-	<logging traceSpecification="*=info" />
-<!-- 
-    <webApplication id="concierge-app" location="concierge-app-1.0.war" contextRoot="concierge" />
- -->
+	<logging traceSpecification="*=info"/>
+    <webApplication contextRoot="/" id="concierge-app" location="concierge-app.war"/>
 </server>

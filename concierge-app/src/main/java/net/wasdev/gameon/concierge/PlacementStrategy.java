@@ -1,11 +1,12 @@
 package net.wasdev.gameon.concierge;
 
+import java.util.List;
 import java.util.UUID;
 
 import net.wasdev.gameon.room.common.Room;
 
 public interface PlacementStrategy {
-	UUID getConnectingRoom(UUID currentRoom, String exit);
+	void placeRoom(Room room);
 
-	void placeRoom(UUID roomUUID, Room room);
+	List<Room> getConnectingRooms(String currentRoomId, String exitName);
 }
