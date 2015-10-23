@@ -7,5 +7,5 @@ import net.wasdev.gameon.room.common.Room;
  */
 
 public interface RoomProvider {
-	Room getRoom();
+	Room getRoom() throws Exception;
 }
