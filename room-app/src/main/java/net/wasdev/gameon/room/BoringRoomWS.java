@@ -92,6 +92,9 @@ public class BoringRoomWS extends BoringRoom implements RoomProvider {
 					response.add(Constants.CONTENT, "You exit out the door to freedom and a more exciting life ... ");
 					response.add(Constants.EXITID, exit.getRoom());
 					session.getBasicRemote().sendText("playerLocation," + Message.getValue(msg.get(Constants.USERID)) + "," + response.build().toString());
+					JsonObjectBuilder event = Json.createObjectBuilder();
+					event.add("*", "Player " + Message.getValue(msg.get(Constants.USERNAME)) +" has left the room");
+					generateEvent(session, event.build(), Message.getValue(msg.get(Constants.USERID)));
 					return;
 				}
 			}
@@ -130,7 +133,7 @@ public class BoringRoomWS extends BoringRoom implements RoomProvider {
     	String username = Message.getValue(msg.get(Constants.USERNAME));
     	String userid = Message.getValue(msg.get(Constants.USERID));
     	
-		//broadcast that the user has entered the room
+		//broadcast that the user has left the room
 		JsonObjectBuilder content = Json.createObjectBuilder();
 		content.add("*", "Player " + username +" has left the room");
 		generateEvent(session, content.build(), userid);
