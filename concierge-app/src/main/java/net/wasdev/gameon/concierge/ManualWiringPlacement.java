@@ -20,6 +20,7 @@ public class ManualWiringPlacement implements PlacementStrategy {
 	public UUID getConnectingRoom(UUID currentRoom, String exit) {
 		
 		return roomUUID;
+		
 	}
 
 	@Override
