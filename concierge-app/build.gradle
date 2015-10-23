@@ -11,7 +11,6 @@ dependencies {
     compile project(':app-common')
 }
 
-
 // Set the Eclipse facets to use 3.1 of the Dynamic Web Module which requires Java 1.7 by default.
 // Also include the JAX-RS and javascript
 eclipse.wtp.facet {
