@@ -1,7 +1,7 @@
 package net.wasdev.gameon.concierge;
 
-import java.util.UUID;
-
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -17,10 +17,12 @@ import net.wasdev.gameon.room.common.Room;
 
 @ApplicationPath("")
 @Path("concierge")
+@ApplicationScoped
 public class ConciergeEndpoint extends Application {
 	
 
-	Concierge c = new Concierge(new Simple2DPlacement());
+	@Inject
+	Concierge c;
 
 	@GET
 	@Path("startingRoom")
@@ -31,15 +33,24 @@ public class ConciergeEndpoint extends Application {
 	
 	@GET
 	@Path("rooms/{roomId}/{exitName}")
-	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response exitRoom(@PathParam("roomId") String roomId, @PathParam("roomID") String exitName) {
+	public Response exitRoom(@PathParam("roomId") String roomId, @PathParam("exitName") String exitName) {
 		return Response.ok(c.exitRoom(roomId, exitName)).build();
 	}
+	
+	@GET
+	@Path("rooms/{roomId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getARoom(@PathParam("roomId") String roomId) {
+		return Response.ok(c.getRoom(roomId)).build();
+	}
+	
+	
 
 	@POST
-	@Path("registerRoom")
+	@Path("rooms")
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response registerRoom(Room room) {
 		return Response.ok(c.registerRoom(room)).build();
 	}
