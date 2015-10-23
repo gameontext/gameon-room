@@ -1,16 +1,22 @@
 package net.wasdev.gameon.concierge;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.ws.rs.core.Application;
 
+import net.wasdev.gameon.room.common.EndpointCollection;
+import net.wasdev.gameon.room.common.RegistrationResponse;
+import net.wasdev.gameon.room.common.Endpoint;
 import net.wasdev.gameon.room.common.Room;
 
 public class Concierge extends Application {
 
 	Map<UUID, Room> roomDirectory = new HashMap<UUID, Room>();
+	Map<String, List<Room>> roomNameToCollection = new HashMap<String, List<Room>>();
 	Room startingRoom = null;
 	
 	PlacementStrategy ps = new Simple2DPlacement();
@@ -26,26 +32,39 @@ public class Concierge extends Application {
 		return startingRoom;
 	}
 	
-	public Room exitRoom(UUID currentRoom, String exitName) {
-		Room nextRoom = null;
-		UUID nextRoomUUID = ps.getConnectingRoom(currentRoom, exitName);
-		if (nextRoomUUID != null) {
-			nextRoom = roomDirectory.get(nextRoomUUID);
+	public EndpointCollection exitRoom(String currentRoomId, String exitName) {
+		List<Room> nextRooms = ps.getConnectingRooms(currentRoomId, exitName);
+		List<Endpoint> endpoints = new ArrayList<Endpoint>();
+		if (nextRooms != null) {
+			for (Room room : nextRooms) {
+				Endpoint endpoint = new Endpoint();
+				endpoint.setUrl(room.getAttribute("endPoint"));
+				endpoints.add(endpoint);
+			}
 		}
-		return nextRoom;
+		EndpointCollection crr = new EndpointCollection();
+		crr.setEndpoints(endpoints);
+		return crr;
 	}
 
-	public UUID registerRoom(Room room) {
+	public RegistrationResponse registerRoom(Room room) {
 		System.out.println("Processing registration for : \n" + room.toString());
 		if (startingRoom == null) {
 			startingRoom = room;
 		}
-		
+		List<Room> roomMap = roomNameToCollection.get(room.getRoomName());
+		if (roomMap == null) {
+			roomMap = new ArrayList<Room>();
+		}
+		roomMap.add(room);
+		roomNameToCollection.put(room.getRoomName(), roomMap);
 		UUID roomUUID = UUID.randomUUID();
 		room.setAssignedID(roomUUID);
 		roomDirectory.put(roomUUID, room);
-		ps.placeRoom(roomUUID, room);
-		return roomUUID;
+		ps.placeRoom(room);
+		
+		RegistrationResponse rr = new RegistrationResponse(roomUUID);
+		return rr;
 	}
 	
 	
