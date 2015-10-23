@@ -17,7 +17,7 @@ public class ManualWiringPlacement implements PlacementStrategy {
 	private Map<String, UUID> roomNameToUUIDMapping = new HashMap<String, UUID>();
 	
 	@Override
-	public List<Room> getConnectingRooms(String currentRoom, String exitName) {
+	public String getConnectingRooms(String currentRoom, String exitName) {
 		List<Room> rooms = null;
 		List<Exit> currentRoomExits = exitMap.get(currentRoom);
 		String roomName = null;
@@ -30,14 +30,11 @@ public class ManualWiringPlacement implements PlacementStrategy {
 		if (roomName != null) {
 			nextRoom = roomNameToUUIDMapping.get(roomName);
 		}
-		return rooms;
+		return null;
 	}
 
 	@Override
 	public void placeRoom(Room room) {
-//		roomNameToUUIDMapping.put(room.getRoomName(), roomUUID);
-		
-//		exitMap.put(roomUUID, room.getExits());
 	}
 
 }
