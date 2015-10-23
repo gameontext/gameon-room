@@ -4,13 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Test;
 
 import net.wasdev.gameon.room.common.RoomToEndpoints;
-import net.wasdev.gameon.room.common.Exit;
 import net.wasdev.gameon.room.common.RegistrationResponse;
 import net.wasdev.gameon.room.common.Room;
 
@@ -111,8 +107,6 @@ public class Test2DConcierge {
 		
 		Room eastRoomRegistered = new Room("East Room");
 		eastRoomRegistered.setAttribute("startLocation", "false");
-		List<Exit> eastRoomExits = new ArrayList<Exit>();
-		eastRoomRegistered.setExits(eastRoomExits );
 		eastRoomRegistered.setAttribute("endPoint", "ws://eastroom");
 		RegistrationResponse eastRoomRegistration = c.registerRoom(eastRoomRegistered);
 		assertNotNull("The registeration of the East room should return a UUID", eastRoomRegistration);
@@ -136,8 +130,6 @@ public class Test2DConcierge {
 	private Concierge addEasyStartingRoom() {
 		Concierge c = new Concierge();
 		Room anEasyRoom = new Room("Starting Room");
-		anEasyRoom.addExit(new Exit("East", "East Room", "A door connecting to the East Room"));
-		anEasyRoom.addExit(new Exit("North", "North Room", "A door connecting to the North Room"));
 		c.registerRoom(anEasyRoom);
 		return c;
 	}
