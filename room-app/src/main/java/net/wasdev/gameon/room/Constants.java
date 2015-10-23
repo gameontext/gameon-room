@@ -15,8 +15,15 @@
  *******************************************************************************/
 package net.wasdev.gameon.room;
 
-import net.wasdev.gameon.room.common.Room;
-
-public interface RoomProvider {
-	Room getRoom() throws Exception;
+public interface Constants {
+	// A field enum or just free-form?
+	String USERNAME = "username";
+	String BOOKMARK = "bookmark";
+	String CONTENT = "content";
+	String LOCATION = "location";
+	String TYPE = "type";
+	String NAME = "name";
+	String DESCRIPTION = "description";
+	String EXITS = "exits";
+	String STATE = "state";
 }

@@ -30,7 +30,7 @@ public class TestDynamicConcierge {
 		Concierge c = new Concierge(new DynamicGrowthPlacement());
 		Room anEasyRoom = new Room("Starting Room");
 		List<Exit> exits = new ArrayList<Exit>();
-		exits.add(new Exit("North", "Second Room"));
+		exits.add(new Exit("North", "Second Room", "Test room"));
 		anEasyRoom.setExits(exits);
 		UUID startingRoomUUID = c.registerRoom(anEasyRoom);
 		
@@ -47,7 +47,7 @@ public class TestDynamicConcierge {
 		Concierge c = new Concierge();
 		Room anEasyRoom = new Room("Starting Room");
 		List<Exit> exits = new ArrayList<Exit>();
-		exits.add(new Exit("North", "Second Room"));
+		exits.add(new Exit("North", "Second Room", "Test room"));
 		anEasyRoom.setExits(exits);
 		c.registerRoom(anEasyRoom);
 		return c;
