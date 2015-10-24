@@ -18,17 +18,17 @@ package net.wasdev.gameon.room.common;
 public class RegistrationResponse {
 
 	
-	private String errorMessage;
+	private String response = "OK";
 	
 	public RegistrationResponse() {
 	}
 
-	public String getErrorMessage() {
-		return errorMessage;
+	public String getResponse() {
+		return response;
 	}
 
-	public void setErrorMessage(String errorMessage) {
-		this.errorMessage = errorMessage;
+	public void setResponse(String response) {
+		this.response = response;
 	}
 
 }

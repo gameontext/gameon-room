@@ -72,7 +72,7 @@ public class LifecycleManager implements ServletContainerInitializer {
 					try {
 						if(Status.OK.getStatusCode()== response.getStatus()) {
 							String resp = response.readEntity(String.class);
-							System.out.println("Registered with UUID " + resp);
+							System.out.println("Registration returned " + resp);
 						} else {
 							System.out.println("Error registering room provider : " + room.getName() + " : status code " + response.getStatus());
 						}
