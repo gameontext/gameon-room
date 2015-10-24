@@ -15,12 +15,15 @@
     <httpEndpoint httpPort="9080" httpsPort="9445" id="defaultHttpEndpoint"/>
 
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
+<<<<<<< Upstream, based on origin/master
 =======
     </featureManager>
 
     <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
     <httpEndpoint httpPort="9080" httpsPort="9445" id="defaultHttpEndpoint"/>
 >>>>>>> 868549d tweaks for room server start
+=======
+>>>>>>> 461b8d5 Adjustments to Concierge endpoint (rest paths, 404)
 
 	<logging traceSpecification="*=info"/>
 	
