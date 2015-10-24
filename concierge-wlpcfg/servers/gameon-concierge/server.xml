@@ -13,12 +13,6 @@
     <httpEndpoint httpPort="9081" httpsPort="9444" id="defaultHttpEndpoint"/>
 
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
-<<<<<<< Upstream, based on origin/master
-
-    <!-- This is required to prevent the web apps from being lazily loaded -->
-    <webContainer deferServletLoad="false"/>
-=======
->>>>>>> 461b8d5 Adjustments to Concierge endpoint (rest paths, 404)
 
     <!-- This is required to prevent the web apps from being lazily loaded -->
     <webContainer deferServletLoad="false"/>
