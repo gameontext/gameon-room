@@ -1,4 +1,4 @@
-<server description="Game On! Room Service">
+<server description="Game On! Concierge Service">
 
     <!-- Enable features -->
     <featureManager>
@@ -6,12 +6,16 @@
 	    <feature>localConnector-1.0</feature>
         <feature>jaxrs-2.0</feature>
         <feature>cdi-1.2</feature>
+        <feature>ssl-1.0</feature>
     </featureManager>
 
     <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
     <httpEndpoint httpPort="9081" httpsPort="9444" id="defaultHttpEndpoint"/>
 
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
+
+    <!-- This is required to prevent the web apps from being lazily loaded -->
+    <webContainer deferServletLoad="false"/>
 
     <applicationMonitor updateTrigger="mbean"/>
 	<logging traceSpecification="*=info"/>

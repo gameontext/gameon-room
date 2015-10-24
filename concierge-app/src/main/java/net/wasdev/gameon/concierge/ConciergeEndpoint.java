@@ -1,12 +1,12 @@
 package net.wasdev.gameon.concierge;
 
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -14,9 +14,10 @@ import net.wasdev.gameon.room.common.EndpointCollection;
 import net.wasdev.gameon.room.common.Room;
 
 @Path("/")
-public class ConciergeEndpoint extends Application {
+public class ConciergeEndpoint {
 
-	Concierge c = new Concierge(new Simple2DPlacement());
+	@Inject
+	Concierge c;
 
 	@GET
 	@Path("startingRoom")
