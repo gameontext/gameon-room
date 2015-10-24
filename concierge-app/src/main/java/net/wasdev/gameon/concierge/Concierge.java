@@ -17,7 +17,7 @@ public class Concierge {
 	Map<String, RoomToEndpoints> roomDirectory = new HashMap<String, RoomToEndpoints>();
 	Set<String> startingRooms = new HashSet<String>();
 	
-	PlacementStrategy ps = new Simple2DPlacement();
+	PlacementStrategy ps = new ManualWiringPlacement();
 
 	public Concierge(PlacementStrategy placementStrategy) {
 		ps = placementStrategy;
@@ -25,7 +25,7 @@ public class Concierge {
 
 	public Concierge() {
 		System.out.println("CONCIERGE IS STARTING");
-		ps = new Simple2DPlacement();
+		ps = new ManualWiringPlacement();
 	}
 
 	public RoomToEndpoints getStartingRoom() {
@@ -37,6 +37,7 @@ public class Concierge {
 				
 			}
 		}
+		System.out.println("Request for starting room : \n null\n" + roomDirectory);
 		return null;
 	}
 
@@ -71,7 +72,6 @@ public class Concierge {
 	}
 
 	public RoomToEndpoints getRoom(String roomId) {
-		RoomToEndpoints rte = new RoomToEndpoints();
-		return null;
+		return roomDirectory.get(roomId);
 	}
 }
