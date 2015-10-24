@@ -11,6 +11,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import net.wasdev.gameon.room.common.RoomToEndpointsWrapper;
 import net.wasdev.gameon.room.common.Room;
 import net.wasdev.gameon.room.common.RoomToEndpoints;
 
@@ -30,7 +31,9 @@ public class ConciergeEndpoint {
 		if ( startingRoom == null )
 			return Response.status(404).build();
 
-		return Response.ok(startingRoom).build();
+		RoomToEndpointsWrapper ew = new RoomToEndpointsWrapper();
+		ew.setRel(startingRoom);
+		return Response.ok(ew).build();
 	}
 	
 	@GET
@@ -42,14 +45,18 @@ public class ConciergeEndpoint {
 		if ( ec.getEndpoints().isEmpty() )
 			return Response.status(404).build();
 
-		return Response.ok(ec).build();
+		RoomToEndpointsWrapper ew = new RoomToEndpointsWrapper();
+		ew.setRel(ec);
+		return Response.ok(ew).build();
 	}
 	
 	@GET
 	@Path("rooms/{roomId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getARoom(@PathParam("roomId") String roomId) {
-		return Response.ok(c.getRoom(roomId)).build();
+		RoomToEndpointsWrapper ew = new RoomToEndpointsWrapper();
+		ew.setRel(c.getRoom(roomId));
+		return Response.ok(ew).build();
 	}
 	
 	
