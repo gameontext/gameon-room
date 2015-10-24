@@ -10,10 +10,14 @@
     </featureManager>
 
     <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
-    <httpEndpoint httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint"/>
+    <httpEndpoint httpPort="9080" httpsPort="9445" id="defaultHttpEndpoint"/>
 
-	<logging traceSpecification="*=info" />
+	<logging traceSpecification="*=info"/>
 	
 	<!-- This is required to prevent the web apps from being lazily loaded -->
 	<webContainer deferServletLoad="false"/>
+
+    <applicationMonitor updateTrigger="mbean"/>
+
+    <webApplication id="room-app" location="room-app.war" name="room-app"/>
 </server>

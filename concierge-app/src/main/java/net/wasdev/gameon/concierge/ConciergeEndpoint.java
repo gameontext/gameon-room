@@ -1,7 +1,5 @@
 package net.wasdev.gameon.concierge;
 
-import java.util.UUID;
-
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -15,10 +13,10 @@ import javax.ws.rs.core.Response;
 
 import net.wasdev.gameon.room.common.Room;
 
-@ApplicationPath("")
-@Path("concierge")
+@ApplicationPath("/")
+@Path("/concierge")
 public class ConciergeEndpoint extends Application {
-	
+
 
 	Concierge c = new Concierge(new Simple2DPlacement());
 
@@ -28,7 +26,7 @@ public class ConciergeEndpoint extends Application {
 	public Response getStartingRoom() {
 		return Response.ok(c.getStartingRoom()).build();
 	}
-	
+
 	@GET
 	@Path("rooms/{roomId}/{exitName}")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -43,6 +41,6 @@ public class ConciergeEndpoint extends Application {
 	public Response registerRoom(Room room) {
 		return Response.ok(c.registerRoom(room)).build();
 	}
-	
-	
+
+
 }
