@@ -12,6 +12,8 @@
     <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
     <httpEndpoint httpPort="9080" httpsPort="9445" id="defaultHttpEndpoint"/>
 
+    <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
+
 	<logging traceSpecification="*=info"/>
 	
 	<!-- This is required to prevent the web apps from being lazily loaded -->

@@ -11,8 +11,9 @@
     <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
     <httpEndpoint httpPort="9081" httpsPort="9444" id="defaultHttpEndpoint"/>
 
+    <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
 
     <applicationMonitor updateTrigger="mbean"/>
 	<logging traceSpecification="*=info"/>
-    <webApplication contextRoot="/" id="concierge-app" location="concierge-app.war"/>
+    <webApplication contextRoot="/concierge" id="concierge-app" location="concierge-app.war"/>
 </server>

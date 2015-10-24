@@ -6,23 +6,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ws.rs.core.Application;
-
+import net.wasdev.gameon.room.common.Endpoint;
 import net.wasdev.gameon.room.common.EndpointCollection;
 import net.wasdev.gameon.room.common.RegistrationResponse;
-import net.wasdev.gameon.room.common.Endpoint;
 import net.wasdev.gameon.room.common.Room;
 
-public class Concierge extends Application {
+public class Concierge {
 
 	Map<UUID, Room> roomDirectory = new HashMap<UUID, Room>();
 	Map<String, List<Room>> roomNameToCollection = new HashMap<String, List<Room>>();
 	Room startingRoom = null;
-	
+
 	PlacementStrategy ps = new Simple2DPlacement();
-	
+
 	public Concierge(PlacementStrategy placementStrategy) {
-			ps = placementStrategy;
+		ps = placementStrategy;
 	}
 
 	public Concierge() {
@@ -31,7 +29,7 @@ public class Concierge extends Application {
 	public Room getStartingRoom() {
 		return startingRoom;
 	}
-	
+
 	public EndpointCollection exitRoom(String currentRoomId, String exitName) {
 		List<Room> nextRooms = ps.getConnectingRooms(currentRoomId, exitName);
 		List<Endpoint> endpoints = new ArrayList<Endpoint>();
@@ -62,10 +60,10 @@ public class Concierge extends Application {
 		room.setAssignedID(roomUUID);
 		roomDirectory.put(roomUUID, room);
 		ps.placeRoom(room);
-		
+
 		RegistrationResponse rr = new RegistrationResponse(roomUUID);
 		return rr;
 	}
-	
-	
+
+
 }
