@@ -1,18 +1,21 @@
 package net.wasdev.gameon.concierge;
 
 <<<<<<< Upstream, based on origin/manualWiring
+<<<<<<< Upstream, based on origin/manualWiring
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.ApplicationPath;
 =======
 >>>>>>> 0cc092c Adjustments to Concierge endpoint (rest paths, 404)
+=======
+import javax.inject.Inject;
+>>>>>>> a9f29e3 something going on... trying to get concierge to remember between requests
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -25,6 +28,7 @@ import net.wasdev.gameon.room.common.Room;
 @ApplicationScoped
 =======
 @Path("/")
+<<<<<<< Upstream, based on origin/manualWiring
 >>>>>>> 0cc092c Adjustments to Concierge endpoint (rest paths, 404)
 public class ConciergeEndpoint extends Application {
 <<<<<<< Upstream, based on origin/manualWiring
@@ -33,9 +37,17 @@ public class ConciergeEndpoint extends Application {
 	@Inject
 	Concierge c;
 =======
+=======
+public class ConciergeEndpoint {
+>>>>>>> a9f29e3 something going on... trying to get concierge to remember between requests
 
+<<<<<<< Upstream, based on origin/manualWiring
 	Concierge c = new Concierge(new Simple2DPlacement());
 >>>>>>> 0cc092c Adjustments to Concierge endpoint (rest paths, 404)
+=======
+	@Inject
+	Concierge c;
+>>>>>>> a9f29e3 something going on... trying to get concierge to remember between requests
 
 	@GET
 	@Path("startingRoom")
