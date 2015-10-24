@@ -7,6 +7,7 @@
         <feature>jaxrs-2.0</feature>
         <feature>cdi-1.2</feature>
         <feature>jsonp-1.0</feature>
+<<<<<<< Upstream, based on origin/master
         <feature>ssl-1.0</feature>
     </featureManager>
 
@@ -14,6 +15,12 @@
     <httpEndpoint httpPort="9080" httpsPort="9445" id="defaultHttpEndpoint"/>
 
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
+=======
+    </featureManager>
+
+    <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
+    <httpEndpoint httpPort="9080" httpsPort="9445" id="defaultHttpEndpoint"/>
+>>>>>>> 868549d tweaks for room server start
 
 	<logging traceSpecification="*=info"/>
 	

@@ -48,7 +48,7 @@ public class ConciergeEndpoint extends Application {
 	
 
 	@POST
-	@Path("rooms")
+	@Path("registerRoom")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response registerRoom(Room room) {
