@@ -15,6 +15,11 @@
  *******************************************************************************/
 package net.wasdev.gameon.room;
 
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 
@@ -29,12 +34,14 @@ import net.wasdev.gameon.room.common.Room;
  * This is a really boring room that doesn't do anything but let people
  * exit it.
  */
-public class BoringRoom {
+@ApplicationScoped
+public class BoringRoom implements RoomProvider {
 	protected static final String name = "Boring";
 	protected static final String ENV_ROOM_SVC = "service.room";
-	protected static final String description = "You are the worlds most boring room. There is nothing to do here. There is an exit to the North";
+	protected static final String description = "You are in the worlds most boring room. There is nothing to do here. There is an exit to the North";
 	private String endPoint = null;
 	protected final Room room;
+	private ConcurrentMap<String, String> players = new ConcurrentHashMap<String, String>();	//players currently in this room
 	
 	public BoringRoom() {
 		room = new Room(name);
@@ -72,5 +79,25 @@ public class BoringRoom {
 		response.add(Constants.EXITS, exits);
 		return response;
 	}
+
+	public List<Exit> getExits() {
+		return room.getExits();
+	}
 	
+	public String getDescription() {
+		return description;
+	}
+	
+	/**
+	 * Add a new player to this room
+	 * 
+	 * @return true if this is a new player, false if this is a reconnect
+	 */
+	public boolean addPlayer(String id, String name) {
+		return players.putIfAbsent(id, name) == null;
+	}
+	
+	public void removePlayer(String id) {
+		players.remove(id);
+	}
 }
