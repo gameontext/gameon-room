@@ -15,23 +15,11 @@
  *******************************************************************************/
 package net.wasdev.gameon.room;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.ws.rs.core.Response;
 
-import com.ibm.jvm.dtfjview.Session;
-
-import net.wasdev.gameon.room.common.Exit;
 import net.wasdev.gameon.room.common.Room;
 
 /*

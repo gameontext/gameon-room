@@ -37,4 +37,3 @@ task publishWar(dependsOn: 'jar', type: Copy) {
 }
 
 assemble.dependsOn('publishWar')
-
