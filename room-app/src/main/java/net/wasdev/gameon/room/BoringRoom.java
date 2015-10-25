@@ -15,13 +15,21 @@
  *******************************************************************************/
 package net.wasdev.gameon.room;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.ws.rs.core.Response;
+
+import com.ibm.jvm.dtfjview.Session;
 
 import net.wasdev.gameon.room.common.Exit;
 import net.wasdev.gameon.room.common.Room;
@@ -43,10 +51,21 @@ public class BoringRoom implements RoomProvider {
 	protected final Room room;
 	private ConcurrentMap<String, String> players = new ConcurrentHashMap<String, String>();	//players currently in this room
 	
+	Engine e = Engine.getEngine();
+	Engine.Room r;
+	
 	public BoringRoom() {
-		room = new Room(name);
+		
+		//get the 'first' room from the engine.
+		r = e.getRooms().iterator().next();
+				
+		room = new Room(r.getRoomName());
 		getConfig();
 		room.setAttribute("endPoint", endPoint + "/ws");
+		
+		//TODO: how to wire up any other rooms from engine?
+		
+		//TODO: wire up real exits from engine room.
 		Exit exit = new Exit("N", "NotWiredUpExit", "A very plain looking door");
 		exit.setState(Exit.State.open);
 		room.addExit(exit);
@@ -67,8 +86,8 @@ public class BoringRoom implements RoomProvider {
 	protected JsonObjectBuilder toJSON() {
 		JsonObjectBuilder response = Json.createObjectBuilder();
 		response.add(Constants.TYPE, "location");
-		response.add(Constants.NAME, name);
-		response.add(Constants.DESCRIPTION, description);
+		response.add(Constants.NAME, r.getRoomName());
+		response.add(Constants.DESCRIPTION, r.getRoomDescription());
 		JsonObjectBuilder exits = Json.createObjectBuilder();
 		for(Exit exit : room.getExits()) {
 			JsonObjectBuilder jsexit = Json.createObjectBuilder();
@@ -85,7 +104,7 @@ public class BoringRoom implements RoomProvider {
 	}
 	
 	public String getDescription() {
-		return description;
+		return r.getRoomDescription();
 	}
 	
 	/**
@@ -94,10 +113,12 @@ public class BoringRoom implements RoomProvider {
 	 * @return true if this is a new player, false if this is a reconnect
 	 */
 	public boolean addPlayer(String id, String name) {
+		r.addUserToRoom(id,name);
 		return players.putIfAbsent(id, name) == null;
 	}
 	
 	public void removePlayer(String id) {
+		r.removeUserFromRoom(id);
 		players.remove(id);
 	}
 }

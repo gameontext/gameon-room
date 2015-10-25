@@ -18,6 +18,9 @@ package net.wasdev.gameon.room;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.json.Json;
@@ -32,8 +35,6 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import net.wasdev.gameon.room.common.Exit;
-
 /**
  * WebSocket endpoint for player's interacting with the room
  */
@@ -42,17 +43,97 @@ public class BoringRoomWS {
 	
 	@Inject
 	BoringRoom room;
+	
+	public static class SessionRoomResponseProcessor implements Engine.Room.RoomResponseProcessor{
+		AtomicInteger counter = new AtomicInteger(0);
+		
+	    private void generateEvent(Session session, JsonObject content, String userID) throws IOException {
+	    	JsonObjectBuilder response = Json.createObjectBuilder();
+	    	response.add("type", "event");
+	    	response.add("content", content);
+	    	session.getBasicRemote().sendText("player," + userID + "," + response.build().toString());
+	    }
+		public void playerEvent(String senderId, String selfMessage, String othersMessage){
+			//System.out.println("Player message :: from("+senderId+") onlyForSelf("+String.valueOf(selfMessage)+") others("+String.valueOf(othersMessage)+")");
+			JsonObjectBuilder content = Json.createObjectBuilder();
+			if(selfMessage!=null && selfMessage.length()>0){
+				content.add(senderId, selfMessage);
+			}
+			if(othersMessage!=null && othersMessage.length()>0){
+				content.add("*", othersMessage);
+			}
+			content.add("bookmark", counter.incrementAndGet());
+			JsonObject json = content.build();
+			for(Session s : activeSessions){
+				try{
+					generateEvent(s, json, senderId);
+				}catch(IOException io){
+					throw new RuntimeException(io);
+				}
+			}		
+		}
+	    private void generateRoomEvent(Session session, JsonObject content) throws IOException {
+	    	JsonObjectBuilder response = Json.createObjectBuilder();
+	    	response.add("type", "event");
+	    	response.add("content", content);
+	    	session.getBasicRemote().sendText("player, *," + response.build().toString());
+	    }
+		public void roomEvent(String s){
+			//System.out.println("Message sent to everyone :: "+s);
+			JsonObjectBuilder content = Json.createObjectBuilder();
+			content.add("*", s);
+			content.add("bookmark", counter.incrementAndGet());
+			JsonObject json = content.build();
+			for(Session session : activeSessions){
+				try{
+					generateRoomEvent(session, json);
+				}catch(IOException io){
+					throw new RuntimeException(io);
+				}
+			}	
+		}
+		public void chatEvent(String username, String msg){
+			JsonObjectBuilder content = Json.createObjectBuilder();
+			content.add("type", "chat");
+			content.add("username", username);
+			content.add("content", msg);
+			content.add("bookmark", counter.incrementAndGet());
+			JsonObject json = content.build();
+			for(Session session : activeSessions){
+				try{
+					session.getBasicRemote().sendText("player, *,"+json.toString());
+				}catch(IOException io){
+					throw new RuntimeException(io);
+				}
+			}
+		}
+		
+		
+		Collection<Session> activeSessions = new HashSet<Session>();
+		public void addSession(Session s){
+			activeSessions.add(s);
+		}
+		public void removeSession(Session s){
+			activeSessions.remove(s);
+		}
+	}
+	
+	private static SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();	
 
     @OnOpen
     public void onOpen(Session session, EndpointConfig ec) {
         // (lifecycle) Called when the connection is opened
         Log.endPoint(this, "This room is starting up");
+        room.r.setRoomResponseProcessor(srrp);
+        srrp.addSession(session);
     }
 
     @OnClose
     public void onClose(Session session, CloseReason reason) {
         // (lifecycle) Called when the connection is closed, treat this as the player has left the room
         Log.endPoint(this, "A player has left the room");
+        room.r.setRoomResponseProcessor(srrp);
+        srrp.removeSession(session);
     }
 
     @OnMessage
@@ -80,36 +161,17 @@ public class BoringRoomWS {
 		//standard response header directed back to the client
 		JsonObjectBuilder response = Json.createObjectBuilder();
 		String content = Message.getValue(msg.get("content").toString().toLowerCase());
-		if(content.equals("look")) {
-			response.add("type", "chat");
-			response.add(Constants.USERNAME, msg.get(Constants.USERNAME));
-			response.add("content", room.getDescription());
-			session.getBasicRemote().sendText("player," + Message.getValue(msg.get(Constants.USERID)) + "," + response.build().toString());
-			return;
+		String userid = Message.getValue(msg.get(Constants.USERID));
+		String username = Message.getValue(msg.get(Constants.USERNAME));
+		
+		if(content.startsWith("/")){
+			room.r.command(userid,content.substring(1));
+		}else{
+			//everything else is chat.
+			srrp.chatEvent(username,content);
 		}
-		String exitCmd = "exit ";
-		if(content.startsWith(exitCmd)) {
-			String exitName = content.substring(exitCmd.length(), content.length());
-			for(Exit exit : room.getExits()) {		//look for a matching exit to the one specified
-				if(exit.getName().equalsIgnoreCase(exitName)) {
-					response.add(Constants.TYPE, "exit");
-					response.add(Constants.CONTENT, "You exit out the door to freedom and a more exciting life ... ");
-					response.add(Constants.EXITID, exit.getRoom());
-					session.getBasicRemote().sendText("playerLocation," + Message.getValue(msg.get(Constants.USERID)) + "," + response.build().toString());
-					JsonObjectBuilder event = Json.createObjectBuilder();
-					event.add("*", "Player " + Message.getValue(msg.get(Constants.USERNAME)) +" has left the room");
-					generateEvent(session, event.build(), Message.getValue(msg.get(Constants.USERID)));
-					return;
-				}
-			}
-			
-		}
-		response.add("type", "chat");
-		response.add(Constants.USERNAME, Message.getValue(msg.get(Constants.USERNAME)));
-		response.add("content", "Unrecognised command - sorry :-(");
-		session.getBasicRemote().sendText("player," + Message.getValue(msg.get(Constants.USERID)) + "," + response.build().toString());
     }
-
+    
     //add a new player to the room
     private void addNewPlayer(Session session, String json) throws IOException {
     	if(session.getUserProperties().get(Constants.USERNAME) != null) {
@@ -119,32 +181,16 @@ public class BoringRoomWS {
 		String username = Message.getValue(msg.get(Constants.USERNAME));
 		String userid = Message.getValue(msg.get(Constants.USERID));
 		
-		if(room.addPlayer(userid, username)) {
-		
-			//broadcast that the user has entered the room
-			JsonObjectBuilder content = Json.createObjectBuilder();
-			content.add("*", "Player " + username +" has entered the room");
-			content.add(userid, "You have entered the room");
-			generateEvent(session, content.build(), userid);
-			
-			//now send the room info
-			session.getUserProperties().put(Constants.USERNAME, username);
-			session.getUserProperties().put(Constants.USERID, userid);
-			session.getBasicRemote().sendText("player," + userid + "," + room.toJSON().build().toString());
+		if(room.addPlayer(userid, username)) {			
+			room.r.command(userid, "look");
 		}
 
     }
     
     private void removePlayer(Session session, String json) throws IOException {
     	JsonObject msg = Json.createReader(new StringReader(json)).readObject();
-    	String username = Message.getValue(msg.get(Constants.USERNAME));
     	String userid = Message.getValue(msg.get(Constants.USERID));
     	room.removePlayer(userid);
-    	
-		//broadcast that the user has left the room
-		JsonObjectBuilder content = Json.createObjectBuilder();
-		content.add("*", "Player " + username +" has left the room");
-		generateEvent(session, content.build(), userid);
     }
     
     @OnError
@@ -154,12 +200,7 @@ public class BoringRoomWS {
         Log.endPoint(this, "oops: " + t);
     }
 
-    private void generateEvent(Session session, JsonObject content, String userID) throws IOException {
-    	JsonObjectBuilder response = Json.createObjectBuilder();
-    	response.add("type", "event");
-    	response.add("content", content);
-    	session.getBasicRemote().sendText("player," + userID + "," + response.build().toString());
-    }
+
     
     /**
      * Simple text based broadcast. This does some additional munging of the
