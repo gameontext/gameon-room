@@ -215,7 +215,7 @@ public class Engine {
 			public void locationEvent(String senderId, String roomName, String roomDescription, Object exits, List<String>objects, List<String>inventory);
 		}
 		
-		public static class sysoutResponseProcessor implements RoomResponseProcessor {
+		public static class DebugResponseProcessor implements RoomResponseProcessor {
 			public void playerEvent(String senderId, String selfMessage, String othersMessage){
 				System.out.println("Player message :: from("+senderId+") onlyForSelf("+String.valueOf(selfMessage)+") others("+String.valueOf(othersMessage)+")");
 			}
@@ -233,7 +233,7 @@ public class Engine {
 			}
 		}
 		
-		static RoomResponseProcessor rrp = new sysoutResponseProcessor();
+		static RoomResponseProcessor rrp = new DebugResponseProcessor();
 		
 		public Room(RoomDesc r, List<Command> globalCommands){
 			roomDesc = r;
@@ -322,15 +322,39 @@ public class Engine {
 		public void process(String execBy, String cmd, Room room){
 			User u = room.userMap.get(execBy);
 			if(u!=null){
-				List<String> invItems = new ArrayList<String>();
-				List<String> roomItems = new ArrayList<String>();
-				for(ItemDesc i : room.roomDesc.items){
-					roomItems.add(i.name);
+				//did they do /look ? or /look object or /look at object ?
+				String restOfCommand = getCommandWithoutVerbAsString(cmd);
+				if(restOfCommand.length()==0){					
+					List<String> invItems = new ArrayList<String>();
+					List<String> roomItems = new ArrayList<String>();
+					for(ItemDesc i : room.roomDesc.items){
+						roomItems.add(i.name);
+					}
+					for(ItemDesc i : u.inventory){
+						invItems.add(i.name);
+					}
+					room.locationEvent(execBy, room.roomDesc.id, room.roomDesc.description, null, roomItems, invItems);
+				}else{
+					//priority goes to looking if we can match an item next.. in case anyone adds an "AT AT" as an item ;p
+					String item = getItemNameFromCommand(restOfCommand, room, u);
+					if(item==null){				
+						String nextWord = getFirstWordFromCommand(restOfCommand);
+						System.out.println("NextWord "+nextWord);
+						if("AT".equalsIgnoreCase(nextWord)){
+							restOfCommand = getCommandWithoutVerbAsString(restOfCommand);
+							System.out.println("roc "+restOfCommand);
+							item = getItemNameFromCommand(restOfCommand, room, u);
+						}
+					}
+					if(item!=null){
+						//delegate to examine.
+						Examine examineCommand = new Examine();						
+						examineCommand.process(execBy, "EXAMINE "+item, room);
+					}else{
+						room.playerEvent(execBy, "You pull out your magnifying glass to look at '"+restOfCommand+"' but realise you have no idea what that is.", null);
+					}
+					
 				}
-				for(ItemDesc i : u.inventory){
-					invItems.add(i.name);
-				}
-				room.locationEvent(execBy, room.roomDesc.id, room.roomDesc.description, null, roomItems, invItems);
 			}
 		}
 	}
@@ -604,7 +628,7 @@ public class Engine {
 										playerMug.state="full";
 									}
 								}else{
-									room.playerEvent(execBy, "You try to telepathically make ther mug interact with the coffee machine, and fail. Perhaps you should take the mug first?",null);
+									room.playerEvent(execBy, "You try to telepathically make the mug interact with the coffee machine, and fail. Perhaps you should take the mug first?",null);
 								}
 							}else{
 								room.playerEvent(execBy, "You try several times to use the "+item.name+" with the "+otherItem.name+" but can't seem to figure out how.",null);
