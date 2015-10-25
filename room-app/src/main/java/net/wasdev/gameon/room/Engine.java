@@ -330,7 +330,7 @@ public class Engine {
 				for(ItemDesc i : u.inventory){
 					invItems.add(i.name);
 				}
-				room.locationEvent(execBy, room.roomDesc.name, room.roomDesc.description, null, roomItems, invItems);
+				room.locationEvent(execBy, room.roomDesc.id, room.roomDesc.description, null, roomItems, invItems);
 			}
 		}
 	}
