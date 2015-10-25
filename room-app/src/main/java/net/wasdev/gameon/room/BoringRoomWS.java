@@ -48,27 +48,30 @@ public class BoringRoomWS {
 	public static class SessionRoomResponseProcessor implements Engine.Room.RoomResponseProcessor{
 		AtomicInteger counter = new AtomicInteger(0);
 		
-	    private void generateEvent(Session session, JsonObject content, String userID, int bookmark) throws IOException {
+	    private void generateEvent(Session session, JsonObject content, String userID, boolean selfOnly, int bookmark) throws IOException {
 	    	JsonObjectBuilder response = Json.createObjectBuilder();
 	    	response.add("type", "event");
 	    	response.add("content", content);
 	    	response.add("bookmark", bookmark);
-	    	session.getBasicRemote().sendText("player," + userID + "," + response.build().toString());
+	    	
+	    	session.getBasicRemote().sendText("player," + (selfOnly?userID:"*") + "," + response.build().toString());
 	    }
 		public void playerEvent(String senderId, String selfMessage, String othersMessage){
 			//System.out.println("Player message :: from("+senderId+") onlyForSelf("+String.valueOf(selfMessage)+") others("+String.valueOf(othersMessage)+")");
 			JsonObjectBuilder content = Json.createObjectBuilder();
-			if(selfMessage!=null && selfMessage.length()>0){
-				content.add(senderId, selfMessage);
-			}
+			boolean selfOnly=true;
 			if(othersMessage!=null && othersMessage.length()>0){
 				content.add("*", othersMessage);
+				selfOnly=false;
+			}
+			if(selfMessage!=null && selfMessage.length()>0){
+				content.add(senderId, selfMessage);
 			}
 			JsonObject json = content.build();
 			int count = counter.incrementAndGet();
 			for(Session s : activeSessions){
 				try{
-					generateEvent(s, json, senderId, count);
+					generateEvent(s, json, senderId, selfOnly, count);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
