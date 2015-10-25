@@ -48,10 +48,11 @@ public class BoringRoomWS {
 	public static class SessionRoomResponseProcessor implements Engine.Room.RoomResponseProcessor{
 		AtomicInteger counter = new AtomicInteger(0);
 		
-	    private void generateEvent(Session session, JsonObject content, String userID) throws IOException {
+	    private void generateEvent(Session session, JsonObject content, String userID, int bookmark) throws IOException {
 	    	JsonObjectBuilder response = Json.createObjectBuilder();
 	    	response.add("type", "event");
 	    	response.add("content", content);
+	    	response.add("bookmark", bookmark);
 	    	session.getBasicRemote().sendText("player," + userID + "," + response.build().toString());
 	    }
 		public void playerEvent(String senderId, String selfMessage, String othersMessage){
@@ -63,31 +64,32 @@ public class BoringRoomWS {
 			if(othersMessage!=null && othersMessage.length()>0){
 				content.add("*", othersMessage);
 			}
-			content.add("bookmark", counter.incrementAndGet());
 			JsonObject json = content.build();
+			int count = counter.incrementAndGet();
 			for(Session s : activeSessions){
 				try{
-					generateEvent(s, json, senderId);
+					generateEvent(s, json, senderId, count);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
 			}		
 		}
-	    private void generateRoomEvent(Session session, JsonObject content) throws IOException {
+	    private void generateRoomEvent(Session session, JsonObject content, int bookmark) throws IOException {
 	    	JsonObjectBuilder response = Json.createObjectBuilder();
 	    	response.add("type", "event");
 	    	response.add("content", content);
-	    	session.getBasicRemote().sendText("player, *," + response.build().toString());
+	    	response.add("bookmark", bookmark);
+	    	session.getBasicRemote().sendText("player,*," + response.build().toString());
 	    }
 		public void roomEvent(String s){
 			//System.out.println("Message sent to everyone :: "+s);
 			JsonObjectBuilder content = Json.createObjectBuilder();
 			content.add("*", s);
-			content.add("bookmark", counter.incrementAndGet());
 			JsonObject json = content.build();
+			int count = counter.incrementAndGet();
 			for(Session session : activeSessions){
 				try{
-					generateRoomEvent(session, json);
+					generateRoomEvent(session, json, count);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
@@ -102,7 +104,7 @@ public class BoringRoomWS {
 			JsonObject json = content.build();
 			for(Session session : activeSessions){
 				try{
-					session.getBasicRemote().sendText("player, *,"+json.toString());
+					session.getBasicRemote().sendText("player,*,"+json.toString());
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
@@ -129,7 +131,7 @@ public class BoringRoomWS {
 			JsonObject json = content.build();
 			for(Session session : activeSessions){
 				try{
-					session.getBasicRemote().sendText("player, "+senderId+","+json.toString());
+					session.getBasicRemote().sendText("player,"+senderId+","+json.toString());
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}

@@ -45,7 +45,7 @@ public class BoringRoom implements RoomProvider {
 		//get the 'first' room from the engine.
 		r = e.getRooms().iterator().next();
 				
-		room = new Room(r.getRoomName());
+		room = new Room(r.getRoomId());
 		getConfig();
 		room.setAttribute("endPoint", endPoint + "/ws");
 		
