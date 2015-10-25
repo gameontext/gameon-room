@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringReader;
 
+import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
@@ -37,7 +38,10 @@ import net.wasdev.gameon.room.common.Exit;
  * WebSocket endpoint for player's interacting with the room
  */
 @ServerEndpoint(value = "/ws")
-public class BoringRoomWS extends BoringRoom implements RoomProvider {
+public class BoringRoomWS {
+	
+	@Inject
+	BoringRoom room;
 
     @OnOpen
     public void onOpen(Session session, EndpointConfig ec) {
@@ -79,7 +83,7 @@ public class BoringRoomWS extends BoringRoom implements RoomProvider {
 		if(content.equals("look")) {
 			response.add("type", "chat");
 			response.add(Constants.USERNAME, msg.get(Constants.USERNAME));
-			response.add("content", description);
+			response.add("content", room.getDescription());
 			session.getBasicRemote().sendText("player," + Message.getValue(msg.get(Constants.USERID)) + "," + response.build().toString());
 			return;
 		}
@@ -115,16 +119,19 @@ public class BoringRoomWS extends BoringRoom implements RoomProvider {
 		String username = Message.getValue(msg.get(Constants.USERNAME));
 		String userid = Message.getValue(msg.get(Constants.USERID));
 		
-		//broadcast that the user has entered the room
-		JsonObjectBuilder content = Json.createObjectBuilder();
-		content.add("*", "Player " + username +" has entered the room");
-		content.add(userid, "You have entered the room");
-		generateEvent(session, content.build(), userid);
+		if(room.addPlayer(userid, username)) {
 		
-		//now send the room info
-		session.getUserProperties().put(Constants.USERNAME, username);
-		session.getUserProperties().put(Constants.USERID, userid);
-		session.getBasicRemote().sendText("player," + userid + "," + toJSON().build().toString());
+			//broadcast that the user has entered the room
+			JsonObjectBuilder content = Json.createObjectBuilder();
+			content.add("*", "Player " + username +" has entered the room");
+			content.add(userid, "You have entered the room");
+			generateEvent(session, content.build(), userid);
+			
+			//now send the room info
+			session.getUserProperties().put(Constants.USERNAME, username);
+			session.getUserProperties().put(Constants.USERID, userid);
+			session.getBasicRemote().sendText("player," + userid + "," + room.toJSON().build().toString());
+		}
 
     }
     
@@ -132,6 +139,7 @@ public class BoringRoomWS extends BoringRoom implements RoomProvider {
     	JsonObject msg = Json.createReader(new StringReader(json)).readObject();
     	String username = Message.getValue(msg.get(Constants.USERNAME));
     	String userid = Message.getValue(msg.get(Constants.USERID));
+    	room.removePlayer(userid);
     	
 		//broadcast that the user has left the room
 		JsonObjectBuilder content = Json.createObjectBuilder();
