@@ -50,6 +50,7 @@
                     <outputDirectory>${wlpOutputDir}</outputDirectory>
                     <installDirectory>${wlpInstallDir}</installDirectory>
                     <configFile>${wlpServerDir}/server.xml</configFile>
+                  	<bootstrapPropertiesFile>${wlpServerDir}/bootstrap.properties</bootstrapPropertiesFile>
                     <jvmOptionsFile>${wlpServerDir}/jvm.options</jvmOptionsFile>
                     <include>usr</include>
                     <install>
