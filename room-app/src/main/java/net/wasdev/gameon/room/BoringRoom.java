@@ -44,9 +44,7 @@ import net.wasdev.gameon.room.common.Room;
  */
 @ApplicationScoped
 public class BoringRoom implements RoomProvider {
-	protected static final String name = "Boring";
 	protected static final String ENV_ROOM_SVC = "service.room";
-	protected static final String description = "You are in the worlds most boring room. There is nothing to do here. There is an exit to the North";
 	private String endPoint = null;
 	protected final Room room;
 	private ConcurrentMap<String, String> players = new ConcurrentHashMap<String, String>();	//players currently in this room
@@ -64,11 +62,6 @@ public class BoringRoom implements RoomProvider {
 		room.setAttribute("endPoint", endPoint + "/ws");
 		
 		//TODO: how to wire up any other rooms from engine?
-		
-		//TODO: wire up real exits from engine room.
-		Exit exit = new Exit("N", "NotWiredUpExit", "A very plain looking door");
-		exit.setState(Exit.State.open);
-		room.addExit(exit);
 	}
 
 	public Room getRoom() throws Exception {
@@ -81,26 +74,6 @@ public class BoringRoom implements RoomProvider {
 			throw new RuntimeException("The location for the concierge service cold not be "
 					+ "found in a system property or environment variable named : " + ENV_ROOM_SVC);
 		}
-	}
-	
-	protected JsonObjectBuilder toJSON() {
-		JsonObjectBuilder response = Json.createObjectBuilder();
-		response.add(Constants.TYPE, "location");
-		response.add(Constants.NAME, r.getRoomName());
-		response.add(Constants.DESCRIPTION, r.getRoomDescription());
-		JsonObjectBuilder exits = Json.createObjectBuilder();
-		for(Exit exit : room.getExits()) {
-			JsonObjectBuilder jsexit = Json.createObjectBuilder();
-			jsexit.add(Constants.STATE, exit.getState().name());
-			jsexit.add(Constants.DESCRIPTION, exit.getState().name());
-			exits.add(exit.getName(), jsexit);
-		}
-		response.add(Constants.EXITS, exits);
-		return response;
-	}
-
-	public List<Exit> getExits() {
-		return room.getExits();
 	}
 	
 	public String getDescription() {

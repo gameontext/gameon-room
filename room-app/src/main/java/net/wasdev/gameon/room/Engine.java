@@ -210,7 +210,9 @@ public class Engine {
 			//"Player message :: from("+senderId+") onlyForSelf("+String.valueOf(selfMessage)+") others("+String.valueOf(othersMessage)+")"
 			public void playerEvent(String senderId, String selfMessage, String othersMessage);
 			//"Message sent to everyone :: "+s
-			public void roomEvent(String s);	
+			public void roomEvent(String s);
+			
+			public void locationEvent(String senderId, String roomName, String roomDescription, Object exits, List<String>objects, List<String>inventory);
 		}
 		
 		public static class sysoutResponseProcessor implements RoomResponseProcessor {
@@ -219,6 +221,15 @@ public class Engine {
 			}
 			public void roomEvent(String s){
 				System.out.println("Message sent to everyone :: "+s);
+			}
+			public void locationEvent(String senderId, String roomName, String roomDescription, Object exits, List<String>objects, List<String>inventory){
+				System.out.println("Location: "+roomName+" (For "+senderId+") "+roomDescription);
+				if(!objects.isEmpty()){
+					System.out.println("You can see the following items: "+objects);
+				}
+				if(!inventory.isEmpty()){
+					System.out.println("You are carrying "+inventory);
+				}
 			}
 		}
 		
@@ -230,7 +241,9 @@ public class Engine {
 				commandMap.put(c.getVerb(), c);
 			}
 		}
-		
+		public void locationEvent(String senderId, String roomName, String roomDescription, Object exits, List<String>objects, List<String>inventory){
+			rrp.locationEvent(senderId, roomName, roomDescription, exits, objects, inventory);
+		}
 		public void playerEvent(String senderId, String selfMessage, String othersMessage){
 			rrp.playerEvent(senderId,selfMessage,othersMessage);
 		}
@@ -307,20 +320,18 @@ public class Engine {
 			return "LOOK";
 		}
 		public void process(String execBy, String cmd, Room room){
-			StringBuilder roomContent = new StringBuilder();
-			roomContent.append(room.roomDesc.description);
-			if(!room.roomDesc.items.isEmpty()){
-				roomContent.append(" ");
-				roomContent.append("There are the following items here [");
-				boolean first=true;
-				for(ItemDesc item : room.roomDesc.items){
-					if(!first)roomContent.append(", ");
-					roomContent.append(item.name);
-					first=false;
+			User u = room.userMap.get(execBy);
+			if(u!=null){
+				List<String> invItems = new ArrayList<String>();
+				List<String> roomItems = new ArrayList<String>();
+				for(ItemDesc i : room.roomDesc.items){
+					roomItems.add(i.name);
 				}
-				roomContent.append("]");
+				for(ItemDesc i : u.inventory){
+					invItems.add(i.name);
+				}
+				room.locationEvent(execBy, room.roomDesc.name, room.roomDesc.description, null, roomItems, invItems);
 			}
-			room.playerEvent(execBy,roomContent.toString(),null);
 		}
 	}
 	
