@@ -1,6 +1,5 @@
 package net.wasdev.gameon.concierge;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -11,12 +10,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import net.wasdev.gameon.room.common.RoomToEndpointsWrapper;
 import net.wasdev.gameon.room.common.Room;
 import net.wasdev.gameon.room.common.RoomToEndpoints;
+import net.wasdev.gameon.room.common.RoomToEndpointsWrapper;
 
 @Path("/")
-@ApplicationScoped
 public class ConciergeEndpoint {
 
 	@Inject
@@ -35,7 +33,7 @@ public class ConciergeEndpoint {
 		ew.setRel(startingRoom);
 		return Response.ok(ew).build();
 	}
-	
+
 	@GET
 	@Path("rooms/{roomId}/{exitName}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -49,7 +47,7 @@ public class ConciergeEndpoint {
 		ew.setRel(ec);
 		return Response.ok(ew).build();
 	}
-	
+
 	@GET
 	@Path("rooms/{roomId}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -58,8 +56,8 @@ public class ConciergeEndpoint {
 		ew.setRel(c.getRoom(roomId));
 		return Response.ok(ew).build();
 	}
-	
-	
+
+
 
 	@POST
 	@Path("registerRoom")
@@ -68,6 +66,6 @@ public class ConciergeEndpoint {
 	public Response registerRoom(Room room) {
 		return Response.ok(c.registerRoom(room)).build();
 	}
-	
-	
+
+
 }

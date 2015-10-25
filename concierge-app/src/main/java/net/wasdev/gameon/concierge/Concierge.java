@@ -16,7 +16,7 @@ import net.wasdev.gameon.room.common.RoomToEndpoints;
 public class Concierge {
 	Map<String, RoomToEndpoints> roomDirectory = new HashMap<String, RoomToEndpoints>();
 	Set<String> startingRooms = new HashSet<String>();
-	
+
 	PlacementStrategy ps = new ManualWiringPlacement();
 
 	public Concierge(PlacementStrategy placementStrategy) {
@@ -24,7 +24,7 @@ public class Concierge {
 	}
 
 	public Concierge() {
-		System.out.println("CONCIERGE IS STARTING");
+		System.out.println("CONCIERGE IS STARTING: " + this.hashCode());
 		ps = new ManualWiringPlacement();
 	}
 
@@ -34,7 +34,7 @@ public class Concierge {
 			if (roomCollection != null) {
 				System.out.println("Request for starting room : \n" + roomCollection + "\n" + roomDirectory);
 				return roomCollection;
-				
+
 			}
 		}
 		System.out.println("Request for starting room : \n null\n" + roomDirectory);
@@ -53,7 +53,7 @@ public class Concierge {
 			rte = new RoomToEndpoints();
 			rte.setRoomId(room.getRoomName());
 		}
-		
+
 		List<String> endpoints = rte.getEndpoints();
 		endpoints.add(room.getAttribute("endPoint"));
 		roomDirectory.put(room.getRoomName(), rte);
@@ -62,7 +62,7 @@ public class Concierge {
 		if (setStartLocation != null) {
 			startLocation = Boolean.valueOf(setStartLocation);
 		}
-		
+
 		ps.placeRoom(room);
 		if (startLocation) {
 			startingRooms.add(room.getRoomName());
