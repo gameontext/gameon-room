@@ -15,15 +15,16 @@
  *******************************************************************************/
 package net.wasdev.gameon.room;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.websocket.CloseReason;
@@ -107,7 +108,33 @@ public class BoringRoomWS {
 				}
 			}
 		}
-		
+		public void locationEvent(String senderId, String roomName, String roomDescription, Object exits, List<String>objects, List<String>inventory){
+			JsonObjectBuilder content = Json.createObjectBuilder();
+			content.add("type", "location");
+			content.add("name", roomName);
+			content.add("description", roomDescription);
+			content.add("exits", Json.createObjectBuilder().build());
+			JsonArrayBuilder inv = Json.createArrayBuilder();
+			for(String i : inventory){
+				inv.add(i);
+			}
+			content.add("pockets", inv.build());
+			JsonArrayBuilder objs = Json.createArrayBuilder();
+			for(String o : objects){
+				objs.add(o);
+			}
+			content.add("objects", objs.build());
+			content.add("bookmark", counter.incrementAndGet());
+			
+			JsonObject json = content.build();
+			for(Session session : activeSessions){
+				try{
+					session.getBasicRemote().sendText("player, "+senderId+","+json.toString());
+				}catch(IOException io){
+					throw new RuntimeException(io);
+				}
+			}
+		}
 		
 		Collection<Session> activeSessions = new HashSet<Session>();
 		public void addSession(Session s){
@@ -158,8 +185,6 @@ public class BoringRoomWS {
 		Log.endPoint(this, "Command received from the user, " + this);
 		JsonObject msg = Json.createReader(new StringReader(json)).readObject();
 		
-		//standard response header directed back to the client
-		JsonObjectBuilder response = Json.createObjectBuilder();
 		String content = Message.getValue(msg.get("content").toString().toLowerCase());
 		String userid = Message.getValue(msg.get(Constants.USERID));
 		String username = Message.getValue(msg.get(Constants.USERNAME));
@@ -199,55 +224,5 @@ public class BoringRoomWS {
         // disrupted
         Log.endPoint(this, "oops: " + t);
     }
-
-
-    
-    /**
-     * Simple text based broadcast. This does some additional munging of the
-     * message text, to make it more obvious where the message originated (is an
-     * endpoint getting its own message back, or has it been forwarded from
-     * another endpoint).
-     *
-     * @param session
-     * @param id
-     * @param message
-     */
-    void broadcast(Session session, String message, String clientMsg) {
-
-        // Look, Ma! Broadcast!
-        // Easy as pie to send the same data around to different sessions.
-        for (Session s : session.getOpenSessions()) {
-            try {
-                if (s.isOpen()) {
-                	if(session.getId().equals(s.getId())) {
-                		//this is potentially a specific broadcast to the client
-                		if(clientMsg != null) {
-                			s.getBasicRemote().sendText(clientMsg);
-                			continue;
-                		}
-                	}
-                    Log.endPoint(this, "--> ep=" + s.getUserProperties().get("endptId") + ": " + message);
-                    s.getBasicRemote().sendText(message);
-                }
-            } catch (IOException e) {
-                tryToClose(s);
-            }
-        }
-    }
-
-    /**
-     * Try to close a session (usually once an error has already occurred).
-     *
-     * @param c
-     */
-    private final void tryToClose(Closeable c) {
-        if (c != null) {
-            try {
-                c.close();
-            } catch (IOException e1) {
-            }
-        }
-    }
-    
     
 }
