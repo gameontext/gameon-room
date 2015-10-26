@@ -475,11 +475,21 @@ public class Engine {
 									room.playerEvent(execBy, "The "+otherItemName+" doesn't look like the kind of thing you should be rummaging around inside.", null);
 								}
 							}else{
-								room.playerEvent(execBy, "I'm really not sure where to find '"+restOfCommand+"' to do that with", null);
+								if(restOfCommand.trim().length()>0){
+									room.playerEvent(execBy, "I'm really not sure where to find '"+restOfCommand+"' to do that with", null);
+								}else{
+									room.playerEvent(execBy, "You want to take the "+item.name+" from where??!", null);
+								}
 							}
 						}else{
+							//if we got here, the item was in a container in the room, and the player didn't use the word 'from'
+							//but 
 							String originalInputWithoutCommand = getCommandWithoutVerbAsString(cmd);
-							room.playerEvent(execBy, "You reach out to take the "+originalInputWithoutCommand+" but then are confused by what you meant by '"+restOfCommand+"' so leave it there instead.",null);
+							if(restOfCommand.trim().length()>0){
+								room.playerEvent(execBy, "You reach out to take the "+originalInputWithoutCommand+" but then are confused by what you meant by '"+restOfCommand+"' so leave it there instead.",null);
+							}else{
+								room.playerEvent(execBy, "You search for the "+originalInputWithoutCommand+" to pick up, but cannot seem to locate it anywhere!",null);
+							}
 						}
 					}else{
 						if(restOfCommand.trim().length()>0){
