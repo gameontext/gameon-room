@@ -35,7 +35,7 @@ Or, if you don't have gradle, then:
 ### Interactive Run
 
 ```
-docker run -it -p 9080:9080 -e LICENSE=accept gameon-room bash
+docker run -it -p 9080:9080 --env-file=dockerrc gameon-room bash
 ```
 
 Then, you can start the server with 
@@ -46,7 +46,7 @@ Then, you can start the server with
 ### Daemon Run
 
 ```
-docker run -d -p 9080:9080 -e LICENSE=accept --name gameon-room gameon-room
+docker run -d -p 9080:9080 --env-file=dockerrc --name gameon-room gameon-room
 ```
 
 ### Stop
@@ -58,7 +58,7 @@ docker stop gameon-room ; docker rm gameon-room
 ### Restart Daemon
 
 ```
-docker stop gameon-room ; docker rm gameon-room ; docker run -d -p 9080:9080 -e LICENSE=accept --name gameon-room gameon-room 
+docker stop gameon-room ; docker rm gameon-room ; docker run -d -p 9080:9080 --env-file=dockerrc --name gameon-room gameon-room 
 ```
 
 ## Docker for Concierge App

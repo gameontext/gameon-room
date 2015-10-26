@@ -32,7 +32,7 @@ import net.wasdev.gameon.room.common.Room;
  */
 @ApplicationScoped
 public class BoringRoom implements RoomProvider {
-	protected static final String ENV_ROOM_SVC = "service.room";
+	protected static final String ENV_ROOM_SVC = "service_room";
 	private String endPoint = null;
 	protected final Room room;
 	private ConcurrentMap<String, String> players = new ConcurrentHashMap<String, String>();	//players currently in this room
