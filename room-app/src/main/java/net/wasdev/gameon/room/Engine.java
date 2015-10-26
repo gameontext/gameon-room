@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Engine {
 
@@ -39,7 +40,7 @@ public class Engine {
 		}
 		public ItemDesc(String name, String description, boolean takeable, boolean clearStateOnDrap, CommandHandler handler){
 			this.name=name; this.description=description;this.takeable=takeable;this.handler=handler;this.clearStateOnDrop=clearStateOnDrap;
-		}
+		}		
 	}
 	
 	private static class ContainerDesc extends ItemDesc{
@@ -124,6 +125,19 @@ public class Engine {
 		}
 		return null;
 	}
+	private static ItemDesc findItemInContainers(String itemName, Room room){
+		for(ItemDesc item : room.roomDesc.items){
+			if(item instanceof ContainerDesc){
+				ContainerDesc box = (ContainerDesc)item;
+				for(ItemDesc boxItem : box.items){
+					if(boxItem.name.equalsIgnoreCase(itemName)){	
+						return boxItem;
+					}
+				}
+			}
+		}
+		return null;
+	}
 	private static ItemDesc findItemInRoomOrInventory(User execBy, String itemName, Room room){
 		ItemDesc result = findItemInRoom(itemName, room);
 		if(result==null)
@@ -165,10 +179,22 @@ public class Engine {
 		List<String> allItems = new ArrayList<String>();
 		for(ItemDesc item : room.roomDesc.items){
 			allItems.add(item.name.trim().toUpperCase());
+			if(item instanceof ContainerDesc){
+				ContainerDesc box = (ContainerDesc)item;
+				for(ItemDesc boxItem: box.items){
+					allItems.add(boxItem.name.trim().toUpperCase());
+				}
+			}
 		}
 		for(ItemDesc item :  execBy.inventory){
 			allItems.add(item.name.trim().toUpperCase());
-		}
+			if(item instanceof ContainerDesc){
+				ContainerDesc box = (ContainerDesc)item;
+				for(ItemDesc boxItem: box.items){
+					allItems.add(boxItem.name.trim().toUpperCase());
+				}
+			}
+		}		
 		//sort so we process longer item names first =)
 		Collections.sort(allItems, new Comparator<String>() {
 			@Override
@@ -289,7 +315,7 @@ public class Engine {
 				if(c!=null){
 					c.process(userid, cmd, this);
 				}else{
-					playerEvent(userid,"I'm sorry dave, I don't know how to do that.",null);
+					playerEvent(userid,"\"I'm sorry dave, I don't know how to do that.\"",null);
 				}
 			}else{
 				playerEvent(userid,"You feel a disturbance in the force.",null);
@@ -339,10 +365,8 @@ public class Engine {
 					String item = getItemNameFromCommand(restOfCommand, room, u);
 					if(item==null){				
 						String nextWord = getFirstWordFromCommand(restOfCommand);
-						System.out.println("NextWord "+nextWord);
 						if("AT".equalsIgnoreCase(nextWord)){
 							restOfCommand = getCommandWithoutVerbAsString(restOfCommand);
-							System.out.println("roc "+restOfCommand);
 							item = getItemNameFromCommand(restOfCommand, room, u);
 						}
 					}
@@ -417,7 +441,48 @@ public class Engine {
 						room.playerEvent(execBy, "You reach out to take the "+item.name+" but then are confused by what you meant by '"+restOfCommand+"' so leave it there instead.",null);
 					}
 				}else{
-					room.playerEvent(execBy, "You search for the "+restOfCommand+" to pick up, but cannot seem to locate it anywhere!",null);
+					//item was not in room.. this gets a little messy.. as we now need to find items inside containers
+					item = findItemInContainers(itemName, room);
+					if(item!=null){
+						restOfCommand = getCommandWithoutVerbAndItemAsString(cmd, item);
+						String nextWord = getFirstWordFromCommand(restOfCommand);
+						if("FROM".equalsIgnoreCase(nextWord)){
+							//skip from
+							restOfCommand = getCommandWithoutVerbAsString(restOfCommand);
+							//from what?
+							String otherItemName = getItemNameFromCommand(restOfCommand, room, u);
+							if(otherItemName!=null){
+								ItemDesc otherItem = findItemInRoomOrInventory(u, otherItemName, room);
+								if(otherItem instanceof ContainerDesc){
+									ContainerDesc box = (ContainerDesc)otherItem;
+									//access check..
+									boolean accessAllowed = true;
+									if(box.access !=null ){
+										accessAllowed = box.access.verifyAccess(box, execBy, room);
+									}
+									if(accessAllowed){
+										if(box.items.contains(item)){
+											room.playerEvent(execBy, "You take the "+item.name+" from the "+otherItem.name, u.username+" takes the "+item.name+" from the "+otherItem.name);
+											box.items.remove(item);
+											u.inventory.add(item);
+										}else{
+											room.playerEvent(execBy, "You look in the "+otherItem.name+" but the "+item.name+" does not appear to be there to take.", null);
+										}
+									}else{
+										room.playerEvent(execBy, "You appear unable to take things from "+box.name, null);
+									}
+								}else{
+									room.playerEvent(execBy, "The "+otherItemName+" doesn't look like the kind of thing you should be rummaging around inside.", null);
+								}
+							}else{
+								room.playerEvent(execBy, "I'm really not sure where to find '"+restOfCommand+"' to do that with", null);
+							}
+						}else{
+							room.playerEvent(execBy, "You reach out to take the "+item.name+" but then are confused by what you meant by '"+restOfCommand+"' so leave it there instead.",null);
+						}
+					}else{
+						room.playerEvent(execBy, "You search for the "+restOfCommand+" to pick up, but cannot seem to locate it anywhere!",null);
+					}
 				}
 			}else{
 				System.out.println("Cannot process take command for user "+execBy+" as they are not known to the room");
@@ -483,9 +548,35 @@ public class Engine {
 				//see if we can find the item in the room or inventory
 				ItemDesc item = findItemInRoomOrInventory(u, itemName, room);
 				if(item!=null){
-					room.playerEvent(execBy, item.description, null);
+					if(item instanceof ContainerDesc){
+						ContainerDesc box = (ContainerDesc)item;
+						StringBuilder result = new StringBuilder();
+						result.append(item.description);
+						result.append(" ");
+						boolean accessAllowed = true;
+						if(box.access !=null ){
+							accessAllowed = box.access.verifyAccess(box, execBy, room);
+						}
+						if(accessAllowed){
+							if(box.items.isEmpty()){
+								result.append("The "+box.name+" appears to be empty.");
+							}else{
+								result.append("There appear to be the following items inside the "+box.name);
+								List<String> itemNames = new ArrayList<String>();
+								for(ItemDesc i : box.items){
+									itemNames.add(i.name);
+								}
+								result.append(itemNames.toString());
+							}
+						}else{
+							result.append("Maybe there's something inside, you can't tell.");
+						}
+						room.playerEvent(execBy, result.toString(), null);
+					}else{
+						room.playerEvent(execBy, item.description, null);
+					}
 				}else{
-					room.playerEvent(execBy, "You search for the "+itemName+" to pick up, but cannot seem to locate it anywhere!",null);
+					room.playerEvent(execBy, "You search for the "+itemName+" to examine, but cannot seem to locate it anywhere!",null);
 				}
 			}else{
 				System.out.println("Cannot process examine command for user "+execBy+" as they are not known to the room");
@@ -647,29 +738,203 @@ public class Engine {
 	ItemDesc stilettoHeels = new ItemDesc("Stilettos", "A bright red pair of six inch stilleto heels.",true,true,new ItemDesc.CommandHandler(){
 		@Override
 		public void processCommand(ItemDesc item, String execBy, String cmd, Room room) {			
-			//allow use of heels with player
-			//allow use of heels with cupboard 
+			//allow use of heels with player (just use heels, must be in inventory)
+			//allow use of heels with cupboard (if in inventory)
 			//both will set state of heels to 'worn by playerid'
-			room.playerEvent(execBy, "You're not sure how to use the heels yet.", null);
+			//heels have 'clear state on drop' set, so if dropped, removes that state.			
+			//allow use of coffee machine with mug
+			User u = room.userMap.get(execBy);
+			if(u!=null){
+				boolean itemIsInInventory = findItemInInventory(item.name, u)!=null;
+				
+				//remove the 'use itemname'
+				String restOfCmd = getCommandWithoutVerbAndItemAsString(cmd,item);
+				//is the next word 'with' ?
+				String next = getFirstWordFromCommand(restOfCmd);
+				if(next==null){
+					//player tried to use heels, are they in player inventory?
+					if(itemIsInInventory){
+						//yes, player has item in inventory
+						room.playerEvent(execBy, "You look at the heels carefully, and realise they are just your size. You slip your feet into the shoes, and slowly stand up. You feel taller!",u.username+" wears the stilettos.");
+						item.state = "wornby:"+u.id;
+					}else{
+						//no, item is in room.
+						room.playerEvent(execBy, "From here, it looks like they might be your size, but you can't be sure, perhaps if you picked them up?",null);
+					}
+				}else{
+					if("WITH".equals(next)){
+						//remove with.. 
+						restOfCmd = getCommandWithoutVerbAsString(restOfCmd);
+						//assume rest of string is an item.
+						ItemDesc otherItem = findItemInRoomOrInventory(u, restOfCmd, room);
+						if(otherItem!=null){
+							if(otherItem.equals(cupboard)){
+								//player tried to use heels, are they in player inventory?
+								if(itemIsInInventory){
+									//yes, player has item in inventory
+									room.playerEvent(execBy, "You look at the heels carefully, and realise they are just your size. You slip your feet into the shoes, and slowly stand up. You feel tall enough to reach the cupboard now!",u.username+" wears the stilettos.");
+									item.state = "wornby:"+u.id;
+								}else{
+									//no, item is in room.
+									room.playerEvent(execBy, "From here, it looks like they might be your size, but you can't be sure, perhaps if you picked them up?",null);
+								}
+							}else{
+								room.playerEvent(execBy, "You try several times to use the "+item.name+" with the "+otherItem.name+" but can't seem to figure out how.",null);
+							}
+						}else{
+							room.playerEvent(execBy, "You aren't quite sure what "+restOfCmd+" is, or how to use it with "+item.name,null);
+						}
+					}else{
+						room.playerEvent(execBy, "I'm sorry dave, I cannot do that!", null);
+					}
+				}
+			}else{
+				//player not in room anymore.
+			}
 		}});
 	ItemDesc jukebox = new ContainerDesc("Jukebox", "A gaudy looking unit, it has seen better days.", false,false, new ItemDesc[]{},new ItemDesc.CommandHandler(){
+		//we really only want one jukebox to play at once ;p
+		AtomicBoolean isPlaying = new AtomicBoolean(false);		
+		class JukeBoxPlayer implements Runnable {
+			Room room;
+			public JukeBoxPlayer(Room room){
+				this.room =room;
+			}
+			@Override
+			public void run() {
+				if(isPlaying.compareAndSet(false,true)){
+					try{	
+						room.roomEvent("The jukebox sings \"Never gonna give you up.. \"");
+						Thread.sleep(1000*10);
+						room.roomEvent("The jukebox sings \"Never gonna let you down.. \"");
+						Thread.sleep(1000*10);
+						room.roomEvent("The jukebox sings \"Never gonna run around.. \"");
+						Thread.sleep(1000*10);
+						room.roomEvent("The jukebox sings \"And desert you.. \"");
+						Thread.sleep(1000*5);
+						room.roomEvent("The jukebox emits a bright arc of light, and a small puff of smoke.. and stops working.");
+						Thread.sleep(1000*1);
+					}catch(InterruptedException io){
+						//ignore.
+					}
+					ContainerDesc box = (ContainerDesc)jukebox;
+					box.items.remove(fuse);
+					ContainerDesc cupboardBox = (ContainerDesc)cupboard;
+					cupboardBox.items.add(fuse);
+					room.roomEvent("You experience an odd feeling of deja vu.");
+					isPlaying.compareAndSet(true, false);
+				}	
+			}
+		}	
+		
 		@Override
 		public void processCommand(ItemDesc item, String execBy, String cmd, Room room) {
 			//allow use of jukebox.
 			//should only work if jukebox contains fuse
-			room.playerEvent(execBy, "The jukebox appears non functional.", null);
+			User u = room.userMap.get(execBy);
+			if(u!=null){	
+				ContainerDesc jb = (ContainerDesc)item;
+				//remove the 'use itemname'
+				String restOfCmd = getCommandWithoutVerbAndItemAsString(cmd,item);
+				//is the next word 'with' ?
+				String next = getFirstWordFromCommand(restOfCmd);
+				if(next==null){
+					if(jb.items.contains(fuse)){
+						room.playerEvent(execBy, "The jukebox plays music, you are so happy!",u.username+" makes the jukebox play music.");
+						(new Thread(new JukeBoxPlayer(room))).start();
+					}else{
+						room.playerEvent(execBy, "The jukebox appears to be non functional, there's a large slot marked 15A that appears to be empty.",null);
+					}
+				}else{
+					if("WITH".equals(next)){
+						//remove with.. 
+						restOfCmd = getCommandWithoutVerbAsString(restOfCmd);
+						//assume rest of string is an item.
+						ItemDesc otherItem = findItemInRoomOrInventory(u, restOfCmd, room);
+						if(otherItem!=null){
+							if(otherItem.equals(fuse)){
+								//is the fuse in the users inventory.. 
+								boolean itemIsInInventory = findItemInInventory(otherItem.name, u)!=null;
+								if(itemIsInInventory){
+									//yes, player has item in inventory
+									room.playerEvent(execBy, "You take the fuse, and insert it into the jukebox. Fingers crossed!",u.username+" installs the fuse into the jukebox.");
+									jb.items.add(fuse);
+									u.inventory.remove(fuse);
+								}else{
+									//no, item is in room.
+									room.playerEvent(execBy, "That fuse looks remarkably like it might fit in that jukebox, but the fuse is all the way over there, perhaps you should take the fuse first?",null);
+								}
+							}else{
+								room.playerEvent(execBy, "You try several times to use the "+item.name+" with the "+otherItem.name+" but can't seem to figure out how.",null);
+							}
+						}else{
+							room.playerEvent(execBy, "You aren't quite sure what "+restOfCmd+" is, or how to use it with "+item.name,null);
+						}
+					}else{
+						room.playerEvent(execBy, "I'm sorry dave, I cannot do that!", null);
+					}
+				}
+			}else{
+				//player not in room anymore.
+			}
 		}});
 	ItemDesc fuse = new ItemDesc("Fuse","A small 5 amp cartridge fuse, it appears to be functional.",true,false,new ItemDesc.CommandHandler(){
 		@Override
 		public void processCommand(ItemDesc item, String execBy, String cmd, Room room) {
 			//allow use of fuse with jukebox
 			//using fuse with jukebox should move it from player inv into jukebox.
-			room.playerEvent(execBy, "You try to use the fuse, but you get the blues, and lose your hues.. or something.", null);
+			User u = room.userMap.get(execBy);
+			if(u!=null){	
+				//remove the 'use itemname'
+				String restOfCmd = getCommandWithoutVerbAndItemAsString(cmd,item);
+				//is the next word 'with' ?
+				String next = getFirstWordFromCommand(restOfCmd);
+				if(next==null){
+					room.playerEvent(execBy, "The thing about fuses, is they are not all that interesting, they don't play video games, and they don't have buttons to press.",null);
+				}else{
+					if("WITH".equals(next)){
+						//remove with.. 
+						restOfCmd = getCommandWithoutVerbAsString(restOfCmd);
+						//assume rest of string is an item.
+						ItemDesc otherItem = findItemInRoomOrInventory(u, restOfCmd, room);
+						if(otherItem!=null){
+							if(otherItem.equals(jukebox)){
+								//is the fuse in the users inventory.. 
+								boolean itemIsInInventory = findItemInInventory(item.name, u)!=null;
+								if(itemIsInInventory){
+									//yes, player has item in inventory
+									room.playerEvent(execBy, "You take the fuse, and insert it into the jukebox. Fingers crossed!",u.username+" installs the fuse into the jukebox.");
+									ContainerDesc jb = (ContainerDesc)otherItem;
+									jb.items.add(fuse);
+									u.inventory.remove(fuse);
+								}else{
+									//no, item is in room.
+									room.playerEvent(execBy, "That fuse looks remarkably like it might fit in that jukebox, but the fuse is all the way over there, perhaps you should take the fuse first?",null);
+								}
+							}else{
+								room.playerEvent(execBy, "You try several times to use the "+item.name+" with the "+otherItem.name+" but can't seem to figure out how.",null);
+							}
+						}else{
+							room.playerEvent(execBy, "You aren't quite sure what "+restOfCmd+" is, or how to use it with "+item.name,null);
+						}
+					}else{
+						room.playerEvent(execBy, "I'm sorry dave, I cannot do that!", null);
+					}
+				}
+			}else{
+				//player not in room anymore.
+			}
 		}});
-	ItemDesc cupboard = new ContainerDesc("Cupboard","A wall mounted cupboard above the Jukebox.", false,false, new ItemDesc[]{fuse},new ContainerDesc.AccessVerificationHandler() {	
+	ItemDesc cupboard = new ContainerDesc("Cupboard","A wall mounted cupboard above the Jukebox, it's just out of your reach.", false,false, new ItemDesc[]{fuse},new ContainerDesc.AccessVerificationHandler() {	
 		@Override
 		public boolean verifyAccess(ItemDesc item, String execBy, Room room) {
-			//only allow access if execBy player has item heels in inventory, and state is 'worn by execBy' 			
+			//only allow access if execBy player has item heels in inventory, and state is 'worn by execBy'
+			User u = room.userMap.get(execBy);
+			if(u!=null){
+				if(u.inventory.contains(stilettoHeels) && stilettoHeels.state.equals("wornby:"+u.id)){
+					return true;
+				}
+			}
 			return false;
 		}});
 	
