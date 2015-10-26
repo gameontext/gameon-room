@@ -475,13 +475,28 @@ public class Engine {
 									room.playerEvent(execBy, "The "+otherItemName+" doesn't look like the kind of thing you should be rummaging around inside.", null);
 								}
 							}else{
-								room.playerEvent(execBy, "I'm really not sure where to find '"+restOfCommand+"' to do that with", null);
+								if(restOfCommand.trim().length()>0){
+									room.playerEvent(execBy, "I'm really not sure where to find '"+restOfCommand+"' to do that with", null);
+								}else{
+									room.playerEvent(execBy, "You want to take the "+item.name+" from where??!", null);
+								}
 							}
 						}else{
-							room.playerEvent(execBy, "You reach out to take the "+item.name+" but then are confused by what you meant by '"+restOfCommand+"' so leave it there instead.",null);
+							//if we got here, the item was in a container in the room, and the player didn't use the word 'from'
+							//but 
+							String originalInputWithoutCommand = getCommandWithoutVerbAsString(cmd);
+							if(restOfCommand.trim().length()>0){
+								room.playerEvent(execBy, "You reach out to take the "+originalInputWithoutCommand+" but then are confused by what you meant by '"+restOfCommand+"' so leave it there instead.",null);
+							}else{
+								room.playerEvent(execBy, "You search for the "+originalInputWithoutCommand+" to pick up, but cannot seem to locate it anywhere!",null);
+							}
 						}
 					}else{
-						room.playerEvent(execBy, "You search for the "+restOfCommand+" to pick up, but cannot seem to locate it anywhere!",null);
+						if(restOfCommand.trim().length()>0){
+							room.playerEvent(execBy, "You search for the "+restOfCommand+" to pick up, but cannot seem to locate it anywhere!",null);
+						}else{
+							room.playerEvent(execBy, "Here is a list of words that rhyme with Take, Rake, Lake, Bake, Fake. If you wish to pick up an item, you need to say which item you wish to Take.",null);
+						}
 					}
 				}
 			}else{
@@ -515,7 +530,11 @@ public class Engine {
 					}						
 					room.playerEvent(execBy, "You drop the "+item.name, u.username+" drops the "+item.name);
 				}else{
-					room.playerEvent(execBy, "You try to drop the "+itemName+" but it appears you don't actually have one of those.", null);
+					if(itemName.trim().length()>0){
+						room.playerEvent(execBy, "You try to drop the "+itemName+" but it appears you don't actually have one of those.", null);
+					}else{
+						room.playerEvent(execBy, "The bassline drops away.. leaving the crowd without a beat. Alternatively, specify which item you wish to drop next time.", null);
+					}
 				}
 				
 			}else{
@@ -576,7 +595,11 @@ public class Engine {
 						room.playerEvent(execBy, item.description, null);
 					}
 				}else{
-					room.playerEvent(execBy, "You search for the "+itemName+" to examine, but cannot seem to locate it anywhere!",null);
+					if(itemName.trim().length()==0){
+						room.playerEvent(execBy, "You want to examine what??!",null);
+					}else{
+						room.playerEvent(execBy, "You search for the "+itemName+" to examine, but cannot seem to locate it anywhere!",null);
+					}
 				}
 			}else{
 				System.out.println("Cannot process examine command for user "+execBy+" as they are not known to the room");
@@ -599,7 +622,11 @@ public class Engine {
 				//see if we can find the item in the room or inventory
 				ItemDesc item = findItemInRoomOrInventory(u, itemName, room);
 				if(item==null){
-					room.playerEvent(execBy, "You search for the "+itemName+" to pick up, but cannot seem to locate it anywhere!",null);
+					if(restOfCommand.trim().length()==0){
+						room.playerEvent(execBy, "Normally, in these text adventurey things, you'd specify the item you wish to use, but you win a prize for being different.",null);
+					}else{
+						room.playerEvent(execBy, "You search for the "+restOfCommand+" to use, but cannot seem to locate it anywhere!",null);
+					}
 				}else{
 					if(item.handler!=null){
 						item.handler.processCommand(item, execBy, cmd, room);
