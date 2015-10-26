@@ -12,8 +12,9 @@ buildscript {
 
 
 task copyTask(type: Copy) {
-    from '../player-app/build/libs/room-app-1.0.war'
+    from '../room-app/build/libs/room-app-1.0.war'
     into 'servers/gameon-room/apps/'
+    rename("room-app-1.0.war", "room-app.war")
 }
 
 apply plugin: 'com.bmuschko.docker-remote-api'
