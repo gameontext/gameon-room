@@ -211,7 +211,13 @@ public class BoringRoomWS {
 		String username = Message.getValue(msg.get(Constants.USERNAME));
 		String userid = Message.getValue(msg.get(Constants.USERID));
 		
-		if(room.addPlayer(userid, username)) {			
+		if(room.addPlayer(userid, username)) {	
+			//this is the first time the player has entered the room
+			room.r.command(userid, "look");
+		}else{
+			//the player has been added back to this room, but is already in it.
+			//for now, we'll just send the look command again. 
+			//although this probably isn't a great idea long term.
 			room.r.command(userid, "look");
 		}
 
