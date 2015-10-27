@@ -655,7 +655,57 @@ public class Engine {
 		}
 	}
 	
-	private static List<Command> globalCommands = Arrays.asList(new Command[]{new Look(), new Inventory(), new Drop(), new Take(), new Quit(), new Use(), new Examine(), new Help()});
+	private static class ListPlayers implements Command {
+		public ListPlayers(){
+		}
+		public String getVerb(){
+			return "LISTPLAYERS";
+		}
+		public void process(String execBy, String cmd, Room room){
+			User u = room.userMap.get(execBy);
+			if(u!=null){
+				List<String> players = new ArrayList<String>();
+				for(User user : room.userMap.values()){
+					players.add(user.username);
+				}
+				room.playerEvent(execBy, "The following players are connected: "+players,null);
+			}
+		}
+	}
+	
+	private static class Reset implements Command {
+		public Reset(){
+		}
+		public String getVerb(){
+			return "RESET";
+		}
+		public void process(String execBy, String cmd, Room room){
+			if("twitter:281946000".equals(execBy)){
+				for(User u : room.userMap.values()){
+					u.inventory.clear();
+				}
+				room.roomDesc.items.clear();
+				room.roomDesc.items.addAll(room.roomDesc.defaultItems);
+				for(ItemDesc item : room.roomDesc.items){
+					if(item instanceof ContainerDesc){
+						ContainerDesc box = (ContainerDesc)item;
+						box.items.clear();
+						box.items.addAll(box.defaultItems);
+					}
+				}
+				room.playerEvent(execBy, "Reset executed. Verify room contents.","An odd feeling comes over you, like you just felt a glitch in the matrix");
+			}else{
+				User u = room.userMap.get(execBy);
+				if(u!=null){
+					room.playerEvent(execBy, "You hit the invisble reset button, hoping it does something.", u.username+" says \"Computer. Arch!\" and an archway appears, "+u.username+" enters the archway and requests a holodeck reset.");
+					room.roomEvent("Access denied: "+u.username+" is not recognised by the ships computer as being a command officer. This infraction has been noted.");
+					room.roomEvent("The archway disappears");
+				}
+			}
+		}
+	}
+	
+	private static List<Command> globalCommands = Arrays.asList(new Command[]{new Reset(), new ListPlayers(), new Look(), new Inventory(), new Drop(), new Take(), new Quit(), new Use(), new Examine(), new Help()});
 	
 	
 	/***********************************************************************************************
