@@ -15,12 +15,16 @@
  *******************************************************************************/
 package net.wasdev.gameon.room;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-import javax.servlet.ServletContainerInitializer;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.HandlesTypes;
+import javax.websocket.Endpoint;
+import javax.websocket.server.ServerApplicationConfig;
+import javax.websocket.server.ServerEndpointConfig;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -30,21 +34,20 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import net.wasdev.gameon.room.common.Room;
+import net.wasdev.gameon.room.engine.Engine;
+import net.wasdev.gameon.room.engine.Room;
+import net.wasdev.gameon.room.engine.meta.ExitDesc;
 
 /**
- * Manges the registration of all room providers with the concierge service
- */
-@HandlesTypes(RoomProvider.class)
-public class LifecycleManager implements ServletContainerInitializer {
+<<<<<<< HEAD
+ * Manages the registration of all rooms in the Engine with the concierge */
+public class LifecycleManager implements ServerApplicationConfig {
 	private static final String ENV_CONCIERGE_SVC = "service_concierge";
+	private static final String ENV_ROOM_SVC = "service_room";
+
 	private String conciergeLocation = null;
 	
-	@Override
-	public void onStartup(Set<Class<?>> c, ServletContext ctx) throws ServletException {
-		getConfig();
-		registerRooms(c);
-	}
+	Engine e = Engine.getEngine();
 	
 	private void getConfig() throws ServletException {
 		conciergeLocation = System.getProperty(ENV_CONCIERGE_SVC, System.getenv(ENV_CONCIERGE_SVC));
@@ -54,36 +57,86 @@ public class LifecycleManager implements ServletContainerInitializer {
 		}
 	}
 
-	private void registerRooms(Set<Class<?>> rooms) {
+	private static class RoomWSConfig extends ServerEndpointConfig.Configurator {
+		public final Room room;
+		public RoomWSConfig(Room room){
+			this.room=room;
+		}
+		@SuppressWarnings("unchecked")
+		@Override
+		public <T> T getEndpointInstance(Class<T> endpointClass){
+			RoomWS r = new RoomWS(this.room);
+			return (T)r;
+		}
+	}
+	
+	private Set<ServerEndpointConfig> registerRooms(Collection<Room> rooms) {
 		Client client = ClientBuilder.newClient();
 		WebTarget target = client.target(conciergeLocation);
-		for(Class<?> room : rooms) {
-			if(room.isInterface()) {
-				continue;
+		Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
+		for(Room room : rooms) {
+			System.out.println("Registering room " + room.getRoomName());
+			Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
+			
+			net.wasdev.gameon.room.common.Room commonRoom=new net.wasdev.gameon.room.common.Room(room.getRoomId());			
+			String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
+			if(endPoint == null) {
+				throw new RuntimeException("The location for the room service cold not be "
+						+ "found in a system property or environment variable named : " + ENV_ROOM_SVC);
 			}
-			try {
-				Object obj = room.newInstance();
-				if(obj instanceof RoomProvider) {
-					RoomProvider provider = (RoomProvider) obj;
-					Room instance = provider.getRoom();
-					System.out.println("Registering room " + instance.getRoomName());
-					Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
-					Response response = builder.post(Entity.json(provider.getRoom()));
-					try {
-						if(Status.OK.getStatusCode()== response.getStatus()) {
-							String resp = response.readEntity(String.class);
-							System.out.println("Registration returned " + resp);
-						} else {
-							System.out.println("Error registering room provider : " + room.getName() + " : status code " + response.getStatus());
-						}
-					} finally {
-						response.close();
-					}
+			commonRoom.setAttribute("endPoint", endPoint + "/ws/"+room.getRoomId());
+			commonRoom.setAttribute("startLocation", ""+room.isStarterLocation());
+			List<net.wasdev.gameon.room.common.Exit> exits = new ArrayList<net.wasdev.gameon.room.common.Exit>();
+			for(ExitDesc ed : room.getExits()){
+				if(ed.handler.isVisible()){
+					net.wasdev.gameon.room.common.Exit e = new net.wasdev.gameon.room.common.Exit();
+					e.setName(ed.direction.toString());
+					e.setDescription(ed.handler.getDescription(null, room));
+					e.setRoom(ed.targetRoomId);
+					exits.add(e);
 				}
-			} catch (Exception e) {
-				System.out.println("Error registering room provider : " + room.getName() + ", " + e.getMessage());
 			}
+			commonRoom.setExits(exits);
+			
+			ServerEndpointConfig.Configurator config = new RoomWSConfig(room);
+			
+			endpoints.add(ServerEndpointConfig.Builder
+            .create(RoomWS.class, "/ws/"+room.getRoomId())
+            .configurator(config)
+            .build());
+		       			
+			Response response = builder.post(Entity.json(commonRoom));
+			try {
+				if(Status.OK.getStatusCode()== response.getStatus()) {
+					String resp = response.readEntity(String.class);
+					System.out.println("Registration returned " + resp);									
+				} else {
+					System.out.println("Error registering room provider : " + room.getRoomName() + " : status code " + response.getStatus());
+				}
+			} finally {
+				response.close();
+			}
+
 		}
+		return endpoints;
+	}
+
+	@Override
+	public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpointClasses) {
+		try{
+			getConfig();
+			return registerRooms(e.getRooms());
+		}catch(ServletException e){
+			System.err.println("Error building endpoint configs for ro");
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		  
+    }
+
+	@Override
+	public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> scanned) {
+		return null;
 	}
 	
 }

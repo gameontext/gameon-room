@@ -19,12 +19,8 @@ package net.wasdev.gameon.room.common;
 public class Exit {
 	private String name;
 	private String room;
-	private State state;
 	private String description;
 	
-	public enum State {
-		open, closed, locked
-	}
 
 	public Exit() {
 		//no-args constructor for JSON serialisation
@@ -57,13 +53,6 @@ public class Exit {
 		return "Exit : " + name + " -> " + room;
 	}
 	
-	public State getState() {
-		return state;
-	}
-	
-	public void setState(State state) {
-		this.state = state;
-	}
 
 	public String getDescription() {
 		return description;
