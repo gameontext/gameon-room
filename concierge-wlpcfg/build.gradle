@@ -27,7 +27,13 @@ docker {
     url = docker_host
 }
 
-task buildImage(type: DockerBuildImage, dependsOn: 'copyTask') {
+task buildDockerImage(type: DockerBuildImage, dependsOn: 'copyTask') {
 	inputDir = file('.')
     tag = 'gameon-concierge'
 }
+
+task stopCurrentContainer(type: DockerStopContainer) {
+    targetContainerId { "gameon-concierge" }
+    timeout 0
+}
+
