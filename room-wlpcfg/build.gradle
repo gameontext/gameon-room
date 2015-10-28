@@ -1,1 +1,57 @@
 apply plugin: 'eclipse'
+
+buildscript {
+	repositories {
+	    mavenCentral()
+	}
+	
+	dependencies {
+		classpath 'com.bmuschko:gradle-docker-plugin:2.6'
+	}
+}
+
+
+task copyTask(type: Copy) {
+    from '../room-app/build/libs/room-app-1.0.war'
+    into 'servers/gameon-room/apps/'
+    rename("room-app-1.0.war", "room-app.war")
+}
+
+apply plugin: 'com.bmuschko.docker-remote-api'
+
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
+
+docker {
+    url = System.getenv('GRADLE_DOCKER_HOST')
+}
+
+task buildDockerImage(type: DockerBuildImage, dependsOn: 'copyTask') {
+	inputDir = file('.')
+    tag = 'gameon-room'
+}
+
+task stopCurrentContainer(type: DockerStopContainer) {
+    targetContainerId { "gameon-room" }
+    timeout 0
+}
+
+task removeCurrentContainer(type: DockerRemoveContainer) {
+	dependsOn stopCurrentContainer
+	targetContainerId { "gameon-room" }
+}
+
+task createNewContainer(type: DockerCreateContainer) {
+	targetImageId { "gameon-room" }
+	containerName = "gameon-room"
+	portBindings = ['9080:9080']
+	env = ["LICENSE=accept", 
+			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
+			"service_room=" + System.getenv('SERVICE_ROOM')]
+}
+
+task startNewContainer(type: DockerStartContainer) {
+	dependsOn createNewContainer
+	targetContainerId { "gameon-room" }
+}
+

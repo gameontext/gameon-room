@@ -1,1 +1,55 @@
 apply plugin: 'eclipse'
+
+buildscript {
+	repositories {
+	    mavenCentral()
+	}
+	
+	dependencies {
+		classpath 'com.bmuschko:gradle-docker-plugin:2.6'
+	}
+}
+
+
+task copyTask(type: Copy) {
+    from '../concierge-app/build/libs/concierge-app-1.0.war'
+    into 'servers/gameon-concierge/apps/'
+    rename("concierge-app-1.0.war", "concierge-app.war")
+}
+
+apply plugin: 'com.bmuschko.docker-remote-api'
+
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
+
+docker {
+    url = System.getenv('GRADLE_DOCKER_HOST')
+}
+
+task buildDockerImage(type: DockerBuildImage, dependsOn: 'copyTask') {
+	inputDir = file('.')
+    tag = 'gameon-concierge'
+}
+
+task stopCurrentContainer(type: DockerStopContainer) {
+    targetContainerId { "gameon-concierge" }
+    timeout 0
+}
+
+task removeCurrentContainer(type: DockerRemoveContainer) {
+	dependsOn stopCurrentContainer
+	targetContainerId { "gameon-concierge" }
+}
+
+task createNewContainer(type: DockerCreateContainer) {
+	targetImageId { "gameon-concierge" }
+	containerName = "gameon-concierge"
+	portBindings = ['9081:9081']
+	env = ["LICENSE=accept"]
+}
+
+task startNewContainer(type: DockerStartContainer) {
+	dependsOn createNewContainer
+	targetContainerId { "gameon-concierge" }
+}
+

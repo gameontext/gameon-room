@@ -39,10 +39,12 @@ import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
 
 /**
+<<<<<<< HEAD
  * Manages the registration of all rooms in the Engine with the concierge */
 public class LifecycleManager implements ServerApplicationConfig {
-	private static final String ENV_CONCIERGE_SVC = "service.concierge";
-	private static final String ENV_ROOM_SVC = "service.room";
+	private static final String ENV_CONCIERGE_SVC = "service_concierge";
+	private static final String ENV_ROOM_SVC = "service_room";
+
 	private String conciergeLocation = null;
 	
 	Engine e = Engine.getEngine();
