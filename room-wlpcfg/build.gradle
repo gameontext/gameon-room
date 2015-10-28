@@ -37,7 +37,7 @@ task stopCurrentContainer(type: DockerStopContainer) {
 }
 
 task removeCurrentContainer(type: DockerRemoveContainer) {
-	dependsOn: stopCurrentContainer
+	dependsOn stopCurrentContainer
 	targetContainerId { "gameon-room" }
 }
 
@@ -45,7 +45,9 @@ task createNewContainer(type: DockerCreateContainer) {
 	targetImageId { "gameon-room" }
 	containerName = "gameon-room"
 	portBindings = ['9080:9080']
-	env = ["LICENSE=accept"]
+	env = ["LICENSE=accept", 
+			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
+			"service_room=" + System.getenv('SERVICE_ROOM')]
 }
 
 task startNewContainer(type: DockerStartContainer) {
