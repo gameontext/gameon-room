@@ -1,5 +1,3 @@
-# Where to find the remote concierge service
 service_concierge=http://localhost:9081/concierge/registerRoom
-
-# Local to this server (this is the URL we hand out)
 service_room=ws://localhost:9080/rooms
+LICENSE=accept

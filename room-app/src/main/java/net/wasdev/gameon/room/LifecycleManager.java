@@ -37,7 +37,7 @@ import net.wasdev.gameon.room.common.Room;
  */
 @HandlesTypes(RoomProvider.class)
 public class LifecycleManager implements ServletContainerInitializer {
-	private static final String ENV_CONCIERGE_SVC = "service.concierge";
+	private static final String ENV_CONCIERGE_SVC = "service_concierge";
 	private String conciergeLocation = null;
 	
 	@Override
