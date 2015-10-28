@@ -39,6 +39,7 @@ task stopCurrentContainer(type: DockerStopContainer) {
 }
 
 task removeCurrentContainer(type: DockerRemoveContainer) {
+	dependsOn: stopCurrentContainer
 	targetContainerId { "gameon-concierge" }
 }
 
