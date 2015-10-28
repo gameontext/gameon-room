@@ -34,7 +34,7 @@ public class ExitDesc {
 		public String getSelfDepartMessage(String execBy, ExitDesc exit, Room exitOwner);
 		public String getOthersDepartMessage(String execBy, ExitDesc exit, Room exitOwner);
 		public boolean isVisible();
-		boolean isTraversable(String execBy, ExitDesc exit, Room exitOwner);		
+		public boolean isTraversable(String execBy, ExitDesc exit, Room exitOwner);		
 	}
 	
 	public final Direction direction;
