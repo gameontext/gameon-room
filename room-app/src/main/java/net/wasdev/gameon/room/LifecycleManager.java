@@ -91,7 +91,7 @@ public class LifecycleManager implements ServerApplicationConfig {
 				if(ed.handler.isVisible()){
 					net.wasdev.gameon.room.common.Exit e = new net.wasdev.gameon.room.common.Exit();
 					e.setName(ed.direction.toString());
-					e.setDescription(ed.handler.getDescription(null, room));
+					e.setDescription(ed.handler.getDescription(null, ed, room));
 					e.setRoom(ed.targetRoomId);
 					exits.add(e);
 				}

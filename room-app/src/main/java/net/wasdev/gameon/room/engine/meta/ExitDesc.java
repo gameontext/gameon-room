@@ -5,25 +5,36 @@ import net.wasdev.gameon.room.engine.Room;
 public class ExitDesc {
 	
 	public enum Direction {
-		NORTH("N"),
-		SOUTH("S"),
-		EAST("E"),
-		WEST("W"),
-		UP("U"),
-		DOWN("D");
+		NORTH("N", "North"),
+		SOUTH("S", "South"),
+		EAST("E", "East"),
+		WEST("W", "West"),
+		UP("U", "Up"),
+		DOWN("D", "Down");
 		private final String shortName;
-		Direction(String shortName){
+		private final String longName;
+		Direction(String shortName, String longName){
 			this.shortName=shortName;
+			this.longName=longName;
 		}
 		public String toString(){
 			return shortName;
 		}
+		public String toLongString(){
+			return longName;
+		}
 	};
 	
 	public interface ExitHandler{
-		public String getDescription(String execBy, Room exitOwner);
+		/**
+		 * @param execBy CAN BE NULL (for getDescription only), means supply default for concierge at registration.
+		 */
+		public String getDescription(String execBy, ExitDesc exit, Room exitOwner);
+
+		public String getSelfDepartMessage(String execBy, ExitDesc exit, Room exitOwner);
+		public String getOthersDepartMessage(String execBy, ExitDesc exit, Room exitOwner);
 		public boolean isVisible();
-		public boolean isTraversable();		
+		boolean isTraversable(String execBy, ExitDesc exit, Room exitOwner);		
 	}
 	
 	public final Direction direction;
@@ -38,15 +49,23 @@ public class ExitDesc {
 		//build a default exit handler that has 
 		this(targetRoomId, dir, new ExitHandler(){
 			@Override
-			public String getDescription(String execBy, Room exitOwner) {
+			public String getDescription(String execBy, ExitDesc exit, Room exitOwner) {
 				return description;
+			}
+			@Override
+			public String getSelfDepartMessage(String execBy, ExitDesc exit, Room exitOwner) {
+				return "You head "+exit.direction.toLongString();
+			}
+			@Override
+			public String getOthersDepartMessage(String execBy, ExitDesc exit, Room exitOwner) {
+				return exitOwner.getUserById(execBy).username+" leaves, headed "+exit.direction.toLongString();
 			}
 			@Override
 			public boolean isVisible() {
 				return visible;
 			}
 			@Override
-			public boolean isTraversable() {
+			public boolean isTraversable(String execBy, ExitDesc exit, Room exitOwner) {
 				return true;
 			}			
 		});

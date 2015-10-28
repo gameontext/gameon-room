@@ -27,6 +27,8 @@ public class Room {
 		public void roomEvent(String s);
 		
 		public void locationEvent(String senderId, String roomName, String roomDescription, Map<String,String> exits, List<String>objects, List<String>inventory);
+		
+		public void exitEvent(String senderId, String exitMessage, String exitID);
 	}
 	
 	public static class DebugResponseProcessor implements Room.RoomResponseProcessor {
@@ -45,6 +47,9 @@ public class Room {
 				System.out.println("You are carrying "+inventory);
 			}
 		}
+		public void exitEvent(String senderId, String m, String id){
+			System.out.println("Exit succeeded : "+m+" to "+id);
+		}
 	}
 	
 	static Room.RoomResponseProcessor rrp = new DebugResponseProcessor();
@@ -59,7 +64,7 @@ public class Room {
 		Map<String,String> exitMap = new HashMap<String,String>();
 		for(ExitDesc e : exits){
 			if(e.handler.isVisible()){
-				exitMap.put(e.direction.toString(), e.handler.getDescription(senderId, room));
+				exitMap.put(e.direction.toString(), e.handler.getDescription(senderId, e, room));
 			}
 		}		
 		rrp.locationEvent(senderId, room.getRoomName(), roomDescription, exitMap, objects, inventory);
@@ -69,6 +74,9 @@ public class Room {
 	}
 	public void roomEvent(String s){
 		rrp.roomEvent(s);
+	}
+	public void exitEvent(String senderId, String exitMessage, String exitId){
+		rrp.exitEvent(senderId, exitMessage, exitId);
 	}
 	public void setRoomResponseProcessor(Room.RoomResponseProcessor rrp){
 		Room.rrp = rrp;
