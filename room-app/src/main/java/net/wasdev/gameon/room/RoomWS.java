@@ -20,32 +20,37 @@ import java.io.StringReader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.websocket.CloseReason;
+import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
+import javax.websocket.MessageHandler;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
+
+import net.wasdev.gameon.room.engine.Room;
 
 /**
  * WebSocket endpoint for player's interacting with the room
  */
-@ServerEndpoint(value = "/ws")
-public class BoringRoomWS {
+public class RoomWS extends Endpoint{
+	private final Room room;
 	
-	@Inject
-	BoringRoom room;
+	public RoomWS(Room room){
+		this.room=room;
+	}
 	
-	public static class SessionRoomResponseProcessor implements Engine.Room.RoomResponseProcessor{
+	public static class SessionRoomResponseProcessor implements net.wasdev.gameon.room.engine.Room.RoomResponseProcessor{
 		AtomicInteger counter = new AtomicInteger(0);
 		
 	    private void generateEvent(Session session, JsonObject content, String userID, boolean selfOnly, int bookmark) throws IOException {
@@ -113,12 +118,17 @@ public class BoringRoomWS {
 				}
 			}
 		}
-		public void locationEvent(String senderId, String roomName, String roomDescription, Object exits, List<String>objects, List<String>inventory){
+		public void locationEvent(String senderId, String roomName, String roomDescription, Map<String,String> exits, List<String>objects, List<String>inventory){
 			JsonObjectBuilder content = Json.createObjectBuilder();
 			content.add("type", "location");
 			content.add("name", roomName);
 			content.add("description", roomDescription);
-			content.add("exits", Json.createObjectBuilder().build());
+			
+			JsonObjectBuilder exitJson = Json.createObjectBuilder();
+			for( Entry<String, String> e : exits.entrySet()){
+				exitJson.add(e.getKey(),e.getValue());
+			}	
+			content.add("exits", exitJson.build());
 			JsonArrayBuilder inv = Json.createArrayBuilder();
 			for(String i : inventory){
 				inv.add(i);
@@ -153,18 +163,29 @@ public class BoringRoomWS {
 	private static SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();	
 
     @OnOpen
-    public void onOpen(Session session, EndpointConfig ec) {
+    public void onOpen(final Session session, EndpointConfig ec) {
         // (lifecycle) Called when the connection is opened
         Log.endPoint(this, "This room is starting up");
-        room.r.setRoomResponseProcessor(srrp);
+        room.setRoomResponseProcessor(srrp);
         srrp.addSession(session);
+        
+        session.addMessageHandler(new MessageHandler.Whole<String>() {
+			@Override
+			public void onMessage(String message){
+				try{
+					receiveMessage(message, session);
+				}catch(IOException io){
+					System.err.println("IO Exception sending message to session "+io);
+				}
+			}
+		});
     }
 
     @OnClose
     public void onClose(Session session, CloseReason reason) {
         // (lifecycle) Called when the connection is closed, treat this as the player has left the room
         Log.endPoint(this, "A player has left the room");
-        room.r.setRoomResponseProcessor(srrp);
+        room.setRoomResponseProcessor(srrp);
         srrp.removeSession(session);
     }
 
@@ -195,7 +216,7 @@ public class BoringRoomWS {
 		String username = Message.getValue(msg.get(Constants.USERNAME));
 		
 		if(content.startsWith("/")){
-			room.r.command(userid,content.substring(1));
+			room.command(userid,content.substring(1));
 		}else{
 			//everything else is chat.
 			srrp.chatEvent(username,content);
@@ -211,22 +232,14 @@ public class BoringRoomWS {
 		String username = Message.getValue(msg.get(Constants.USERNAME));
 		String userid = Message.getValue(msg.get(Constants.USERID));
 		
-		if(room.addPlayer(userid, username)) {	
-			//this is the first time the player has entered the room
-			room.r.command(userid, "look");
-		}else{
-			//the player has been added back to this room, but is already in it.
-			//for now, we'll just send the look command again. 
-			//although this probably isn't a great idea long term.
-			room.r.command(userid, "look");
-		}
-
+		room.addUserToRoom(userid, username);
+		room.command(userid, "look");
     }
     
     private void removePlayer(Session session, String json) throws IOException {
     	JsonObject msg = Json.createReader(new StringReader(json)).readObject();
     	String userid = Message.getValue(msg.get(Constants.USERID));
-    	room.removePlayer(userid);
+    	room.removeUserFromRoom(userid);
     }
     
     @OnError
