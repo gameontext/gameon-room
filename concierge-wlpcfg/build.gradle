@@ -22,7 +22,7 @@ apply plugin: 'com.bmuschko.docker-remote-api'
 import com.bmuschko.gradle.docker.tasks.container.*
 import com.bmuschko.gradle.docker.tasks.image.*
 
-def docker_host = System.getenv('DOCKER_HOST')
+def docker_host = System.getenv('GRADLE_DOCKER_HOST')
 
 docker {
     url = docker_host
@@ -38,3 +38,13 @@ task stopCurrentContainer(type: DockerStopContainer) {
     timeout 0
 }
 
+task removeCurrentContainer(type: DockerRemoveContainer) {
+	targetContainerId { "gameon-concierge" }
+}
+
+task startNewContainer(type: DockerCreateContainer) {
+	image { "gameon-concierge" }
+	containerName { "gameon-concierge" }
+	portBindings = ["9081:9081"]
+	env = ["LICENSE=accept"]
+}
