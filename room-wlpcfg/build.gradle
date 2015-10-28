@@ -19,15 +19,37 @@ task copyTask(type: Copy) {
 
 apply plugin: 'com.bmuschko.docker-remote-api'
 
-import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
-
-def docker_host = System.getenv('DOCKER_HOST')
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
 
 docker {
-    url = docker_host
+    url = System.getenv('GRADLE_DOCKER_HOST')
 }
 
-task buildImage(type: DockerBuildImage, dependsOn: 'copyTask') {
+task buildDockerImage(type: DockerBuildImage, dependsOn: 'copyTask') {
 	inputDir = file('.')
     tag = 'gameon-room'
 }
+
+task stopCurrentContainer(type: DockerStopContainer) {
+    targetContainerId { "gameon-room" }
+    timeout 0
+}
+
+task removeCurrentContainer(type: DockerRemoveContainer) {
+	dependsOn: stopCurrentContainer
+	targetContainerId { "gameon-room" }
+}
+
+task createNewContainer(type: DockerCreateContainer) {
+	targetImageId { "gameon-room" }
+	containerName = "gameon-room"
+	portBindings = ['9080:9080']
+	env = ["LICENSE=accept"]
+}
+
+task startNewContainer(type: DockerStartContainer) {
+	dependsOn createNewContainer
+	targetContainerId { "gameon-room" }
+}
+
