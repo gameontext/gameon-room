@@ -29,6 +29,7 @@ docker {
 task buildDockerImage(type: DockerBuildImage, dependsOn: 'copyTask') {
 	inputDir = file('.')
     tag = 'gameon-concierge'
+    quiet = false
 }
 
 task stopCurrentContainer(type: DockerStopContainer) {
