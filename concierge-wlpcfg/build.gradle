@@ -42,9 +42,15 @@ task removeCurrentContainer(type: DockerRemoveContainer) {
 	targetContainerId { "gameon-concierge" }
 }
 
-task startNewContainer(type: DockerCreateContainer) {
-	image { "gameon-concierge" }
-	containerName { "gameon-concierge" }
-	portBindings = ["9081:9081"]
+task createNewContainer(type: DockerCreateContainer) {
+	targetImageId { "gameon-concierge" }
+	containerName = "gameon-concierge"
+	portBindings = ['9081:9081']
 	env = ["LICENSE=accept"]
 }
+
+task startNewContainer(type: DockerStartContainer) {
+	dependsOn createNewContainer
+	targetContainerId { "gameon-concierge" }
+}
+
