@@ -6,6 +6,7 @@ import java.util.List;
 import net.wasdev.gameon.room.engine.RoomCommand;
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.User;
+import net.wasdev.gameon.room.engine.meta.ExitDesc;
 import net.wasdev.gameon.room.engine.meta.ItemDesc;
 
 public class Look extends RoomCommand {
@@ -38,6 +39,15 @@ public class Look extends RoomCommand {
 					if("AT".equalsIgnoreCase(nextWord)){
 						restOfCommand = getCommandWithoutVerbAsString(restOfCommand);
 						item = getItemNameFromCommand(restOfCommand, room, u);
+					}else{
+						//wasn't at.. is it a direction?
+						for(ExitDesc ed : room.getExits()){
+							if(ed.direction.toString().toUpperCase().equals(nextWord.toUpperCase()) || ed.direction.toLongString().toUpperCase().equals(nextWord.toUpperCase())){
+								room.playerEvent(execBy, ed.handler.getDescription(execBy, ed, room), null);
+								//early return.. avoid sending the 'rest of command' error below =)
+								return;
+							}
+						}
 					}
 				}
 				if(item!=null){
