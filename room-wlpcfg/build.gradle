@@ -21,7 +21,7 @@ apply plugin: 'com.bmuschko.docker-remote-api'
 
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 
-docker_host = System.getenv('DOCKER_HOST')
+def docker_host = System.getenv('DOCKER_HOST')
 
 docker {
     url = docker_host
