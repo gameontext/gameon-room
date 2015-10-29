@@ -5,14 +5,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import net.wasdev.gameon.room.engine.RoomCommand;
 import net.wasdev.gameon.room.engine.DataProvider;
 import net.wasdev.gameon.room.engine.Room;
+import net.wasdev.gameon.room.engine.RoomCommand;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
 import net.wasdev.gameon.room.engine.meta.ItemDesc;
 import net.wasdev.gameon.room.engine.meta.RoomDesc;
 import net.wasdev.gameon.room.engine.sample.commands.Drop;
 import net.wasdev.gameon.room.engine.sample.commands.Examine;
+import net.wasdev.gameon.room.engine.sample.commands.Go;
 import net.wasdev.gameon.room.engine.sample.commands.Help;
 import net.wasdev.gameon.room.engine.sample.commands.Inventory;
 import net.wasdev.gameon.room.engine.sample.commands.ListPlayers;
@@ -26,6 +27,7 @@ import net.wasdev.gameon.room.engine.sample.items.Items;
 public class SampleDataProvider implements DataProvider{
 
 	static List<RoomCommand> globalCommands = Arrays.asList(new RoomCommand[]{
+			new Go(),
 			new Reset(), 
 			new ListPlayers(), 
 			new Look(), 

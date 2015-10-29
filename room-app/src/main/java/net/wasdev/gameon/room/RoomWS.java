@@ -48,6 +48,7 @@ public class RoomWS extends Endpoint{
 	
 	public RoomWS(Room room){
 		this.room=room;
+        room.setRoomResponseProcessor(srrp);
 	}
 	
 	public static class SessionRoomResponseProcessor implements net.wasdev.gameon.room.engine.Room.RoomResponseProcessor{
@@ -150,6 +151,21 @@ public class RoomWS extends Endpoint{
 				}
 			}
 		}
+		public void exitEvent(String senderId, String message, String exitID){
+			JsonObjectBuilder content = Json.createObjectBuilder();
+			content.add("type", "exit");
+			content.add("exitId", exitID);
+			content.add("content", message);
+			content.add("bookmark", counter.incrementAndGet());
+			JsonObject json = content.build();
+			for(Session session : activeSessions){
+				try{
+					session.getBasicRemote().sendText("playerLocation,"+senderId+","+json.toString());
+				}catch(IOException io){
+					throw new RuntimeException(io);
+				}
+			}
+		}
 		
 		Collection<Session> activeSessions = new HashSet<Session>();
 		public void addSession(Session s){
@@ -166,7 +182,6 @@ public class RoomWS extends Endpoint{
     public void onOpen(final Session session, EndpointConfig ec) {
         // (lifecycle) Called when the connection is opened
         Log.endPoint(this, "This room is starting up");
-        room.setRoomResponseProcessor(srrp);
         srrp.addSession(session);
         
         session.addMessageHandler(new MessageHandler.Whole<String>() {
@@ -185,7 +200,6 @@ public class RoomWS extends Endpoint{
     public void onClose(Session session, CloseReason reason) {
         // (lifecycle) Called when the connection is closed, treat this as the player has left the room
         Log.endPoint(this, "A player has left the room");
-        room.setRoomResponseProcessor(srrp);
         srrp.removeSession(session);
     }
 
