@@ -17,7 +17,7 @@ public class Go extends RoomCommand {
 		if(u!=null){
 			String direction = getCommandWithoutVerbAsString(cmd).toUpperCase().trim();
 			for(ExitDesc ed : room.getExits()){
-				if(ed.direction.toString().equals(direction)){
+				if(ed.direction.toString().toUpperCase().equals(direction.toUpperCase())){
 					if(ed.handler.isVisible() && ed.handler.isTraversable(execBy,ed, room)){
 						room.exitEvent(execBy,ed.handler.getSelfDepartMessage(execBy, ed, room), ed.direction.toString());
 					}else{
