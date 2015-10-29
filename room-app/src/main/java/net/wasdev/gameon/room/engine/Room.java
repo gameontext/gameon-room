@@ -52,7 +52,7 @@ public class Room {
 		}
 	}
 	
-	static Room.RoomResponseProcessor rrp = new DebugResponseProcessor();
+	private Room.RoomResponseProcessor rrp = new DebugResponseProcessor();
 	
 	public Room(RoomDesc r, List<RoomCommand> globalCommands){
 		roomDesc = r;
@@ -79,7 +79,7 @@ public class Room {
 		rrp.exitEvent(senderId, exitMessage, exitId);
 	}
 	public void setRoomResponseProcessor(Room.RoomResponseProcessor rrp){
-		Room.rrp = rrp;
+		this.rrp = rrp;
 	}
 	
 	public void addUserToRoom(String id, String username){
