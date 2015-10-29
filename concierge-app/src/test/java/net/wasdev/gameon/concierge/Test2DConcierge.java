@@ -46,7 +46,7 @@ public class Test2DConcierge {
 	@Test
 	public void registerARoom() {
 		// We want the room itself to come up and publish to the concierge. So the flow will require the room to say "Here I am concierge"
-		Concierge c = new Concierge();
+		Concierge c = new Concierge(new Simple2DPlacement());
 		Room startingRoom = new Room("Starting Room");
 		c.registerRoom(startingRoom);
 	}
@@ -64,6 +64,7 @@ public class Test2DConcierge {
 		RoomToEndpoints startingRoom = c.getStartingRoom();
 		assertEquals("The first room should be called the starting room", "Starting Room", startingRoom.getRoomId());
 		Room eastRoom = new Room("East Room");
+		eastRoom.setAttribute("startLocation", "false");
 		eastRoom.setAttribute("endPoint", "ws://secondRoom");
 		RegistrationResponse response = c.registerRoom(eastRoom);
 		assertNotNull("Registering the east room should return a valid UUID", response);
@@ -128,7 +129,7 @@ public class Test2DConcierge {
 	}
 
 	private Concierge addEasyStartingRoom() {
-		Concierge c = new Concierge();
+		Concierge c = new Concierge(new Simple2DPlacement());
 		Room anEasyRoom = new Room("Starting Room");
 		c.registerRoom(anEasyRoom);
 		return c;
