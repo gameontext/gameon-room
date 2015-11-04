@@ -28,7 +28,7 @@ public class ContainerDesc extends ItemDesc{
 		this.defaultItems = Collections.unmodifiableSet(new HashSet<ItemDesc>(this.items));
 	}		
 	public ContainerDesc(String name, String description, boolean takeable,boolean clearStateOnDrop,ItemDesc[] items,ItemCommand handler){
-		this(name,description,takeable,clearStateOnDrop,items,null,null,null);
+		this(name,description,takeable,clearStateOnDrop,items,null,handler,null);
 	}
 	public ContainerDesc(String name, String description, boolean takeable,boolean clearStateOnDrop,ItemDesc[] items,ContainerDesc.AccessVerificationHandler access){
 		this(name,description,takeable,clearStateOnDrop,items,access,null,null);
