@@ -27,11 +27,13 @@ echo Building projects using gradle...
 ./gradlew build
 echo Building and Starting Concierge Docker Image...
 cd concierge-wlpcfg
-../gradlew buildDockerImage removeCurrentContainer
+../gradlew buildDockerImage
+../gradlew removeCurrentContainer
 ../gradlew startNewContainer
 echo Building and Starting Room Docker Image...
 cd ../room-wlpcfg
-../gradlew buildDockerImage removeCurrentContainer
+../gradlew buildDockerImage
+../gradlew removeCurrentContainer
 ../gradlew startNewContainer
 echo Removing JDK, cause there's no reason that's an artifact...
 cd ..
