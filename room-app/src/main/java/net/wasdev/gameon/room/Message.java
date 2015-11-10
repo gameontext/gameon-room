@@ -17,7 +17,9 @@ package net.wasdev.gameon.room;
 
 import java.util.ArrayList;
 
+import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
 
 public class Message {
 
@@ -43,17 +45,12 @@ public class Message {
 		return list.toArray(new String[]{});
 	}
 	
-	//strips quotes to extract the value of the string, returns the unmodified string if it is not bookended by "
-	public static String getValue(String text) {
-		int start = text.indexOf('"');
-		int end = text.lastIndexOf('"');
-		if((start != -1) && (end != -1)) {
-			return text.substring(start + 1, end);
-		}
-		return text;
-	}
-	
 	public static String getValue(JsonValue value) {
-		return getValue(value.toString());
+		if(value.getValueType().equals(ValueType.STRING)){
+			JsonString s = (JsonString)value;
+			return s.getString();
+		}else{
+			return value.toString();
+		}
 	}
 }

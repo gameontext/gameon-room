@@ -12,13 +12,14 @@ import net.wasdev.gameon.room.engine.meta.ContainerDesc;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
 import net.wasdev.gameon.room.engine.meta.ItemDesc;
 import net.wasdev.gameon.room.engine.meta.RoomDesc;
+import net.wasdev.gameon.room.engine.parser.CommandHandler;
+import net.wasdev.gameon.room.engine.parser.CommandTemplate;
 
 public class Room {		
 	RoomDesc roomDesc;
 	
-	Map<String,User> userMap = new ConcurrentHashMap<String,User>();
-	
-	Map<String,RoomCommand> commandMap = new HashMap<String,RoomCommand>();
+	Map<String,User> userMap = new ConcurrentHashMap<String,User>();	
+	Map<String,CommandHandler> commandMap = new HashMap<String,CommandHandler>();
 	
 	public interface RoomResponseProcessor {
 		//"Player message :: from("+senderId+") onlyForSelf("+String.valueOf(selfMessage)+") others("+String.valueOf(othersMessage)+")"
@@ -52,12 +53,15 @@ public class Room {
 		}
 	}
 	
-	static Room.RoomResponseProcessor rrp = new DebugResponseProcessor();
+	private Room.RoomResponseProcessor rrp = new DebugResponseProcessor();
 	
-	public Room(RoomDesc r, List<RoomCommand> globalCommands){
+	public Room(RoomDesc r, List<CommandHandler> globalCommands){
 		roomDesc = r;
-		for(RoomCommand c: globalCommands){
-			commandMap.put(c.getVerb(), c);
+		for(CommandHandler c: globalCommands){
+			for(CommandTemplate t : c.getTemplates()){
+				CommandTemplate.ParseNode verb = t.template.get(0);
+				commandMap.put(verb.data.toUpperCase(), c);
+			}
 		}
 	}
 	public void locationEvent(String senderId, Room room, String roomDescription, Collection<ExitDesc> exits, List<String>objects, List<String>inventory){
@@ -79,7 +83,7 @@ public class Room {
 		rrp.exitEvent(senderId, exitMessage, exitId);
 	}
 	public void setRoomResponseProcessor(Room.RoomResponseProcessor rrp){
-		Room.rrp = rrp;
+		this.rrp = rrp;
 	}
 	
 	public void addUserToRoom(String id, String username){
@@ -109,25 +113,12 @@ public class Room {
 		}
 	}		
 	
-	private static String getFirstWordFromCommand(String cmd){
-		Scanner s = new Scanner(cmd);
-		if(s.hasNext()){
-			return s.next().trim().toUpperCase();
-		}else{
-			return null;
-		}			
-	}	
+
 	public void command(String userid, String cmd){
-		String command = getFirstWordFromCommand(cmd);
-		if(command!=null){
-			RoomCommand c = commandMap.get(command);
-			if(c!=null){
-				c.process(userid, cmd, this);
-			}else{
-				playerEvent(userid,"\"I'm sorry dave, I don't know how to do that.\"",null);
-			}
-		}else{
-			playerEvent(userid,"You feel a disturbance in the force.",null);
+		try{
+			Parser.parseInput(commandMap, cmd, this, userid);
+		}catch(RuntimeException e){
+			this.playerEvent(userid, "I'm sorry Dave, I don't know how to do that", null);
 		}
 	}
 	
@@ -173,7 +164,7 @@ public class Room {
 		}
 	}
 	
-	public Collection<RoomCommand> getCommands(){
+	public Collection<CommandHandler> getCommands(){
 		return commandMap.values();
 	}
 }

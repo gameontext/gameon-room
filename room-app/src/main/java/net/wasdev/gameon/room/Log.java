@@ -22,6 +22,7 @@ public class Log {
     static final String log_format = "%-10s - %s";
 
     public static void endPoint(Object source, String message) {
+        System.out.println(message);
         log.fine(String.format(log_format, source == null ? "null" : System.identityHashCode(source), message));
     }
 }
