@@ -48,7 +48,6 @@ import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
 
 /**
-<<<<<<< HEAD
  * Manages the registration of all rooms in the Engine with the concierge */
 public class LifecycleManager implements ServerApplicationConfig {
 	private static final String ENV_CONCIERGE_SVC = "service_concierge";
@@ -67,7 +66,9 @@ public class LifecycleManager implements ServerApplicationConfig {
 	    	response.add("content", content);
 	    	response.add("bookmark", bookmark);
 	    	
-	    	session.getBasicRemote().sendText("player," + (selfOnly?userID:"*") + "," + response.build().toString());
+	    	String msg = "player," + (selfOnly?userID:"*") + "," + response.build().toString();
+	    	System.out.println("ROOM(PE): sending to session "+session.getId()+" message:"+msg);
+	    	session.getBasicRemote().sendText(msg);
 	    }
 		public void playerEvent(String senderId, String selfMessage, String othersMessage){
 			//System.out.println("Player message :: from("+senderId+") onlyForSelf("+String.valueOf(selfMessage)+") others("+String.valueOf(othersMessage)+")");
@@ -95,7 +96,11 @@ public class LifecycleManager implements ServerApplicationConfig {
 	    	response.add("type", "event");
 	    	response.add("content", content);
 	    	response.add("bookmark", bookmark);
-	    	session.getBasicRemote().sendText("player,*," + response.build().toString());
+	    	
+	    	String msg = "player,*," + response.build().toString();
+	    	System.out.println("ROOM(RE): sending to session "+session.getId()+" message:"+msg);
+	    	
+	    	session.getBasicRemote().sendText(msg);
 	    }
 		public void roomEvent(String s){
 			//System.out.println("Message sent to everyone :: "+s);
@@ -120,7 +125,10 @@ public class LifecycleManager implements ServerApplicationConfig {
 			JsonObject json = content.build();
 			for(Session session : activeSessions){
 				try{
-					session.getBasicRemote().sendText("player,*,"+json.toString());
+			    	String cmsg = "player,*,"+json.toString();
+			    	System.out.println("ROOM(CE): sending to session "+session.getId()+" message:"+cmsg);
+			    	
+			    	session.getBasicRemote().sendText(cmsg);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
@@ -152,7 +160,9 @@ public class LifecycleManager implements ServerApplicationConfig {
 			JsonObject json = content.build();
 			for(Session session : activeSessions){
 				try{
-					session.getBasicRemote().sendText("player,"+senderId+","+json.toString());
+			    	String lmsg = "player,"+senderId+","+json.toString();
+			    	System.out.println("ROOM(LE): sending to session "+session.getId()+" message:"+lmsg);			    	
+			    	session.getBasicRemote().sendText(lmsg);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
@@ -167,7 +177,9 @@ public class LifecycleManager implements ServerApplicationConfig {
 			JsonObject json = content.build();
 			for(Session session : activeSessions){
 				try{
-					session.getBasicRemote().sendText("playerLocation,"+senderId+","+json.toString());
+			    	String emsg = "playerLocation,"+senderId+","+json.toString();
+			    	System.out.println("ROOM(EE): sending to session "+session.getId()+" message:"+emsg);			    	
+			    	session.getBasicRemote().sendText(emsg);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}

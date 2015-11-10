@@ -1,39 +1,96 @@
 package net.wasdev.gameon.room.engine.sample.commands;
 
-import net.wasdev.gameon.room.engine.RoomCommand;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import net.wasdev.gameon.room.engine.Parser;
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.User;
-import net.wasdev.gameon.room.engine.meta.ItemDesc;
+import net.wasdev.gameon.room.engine.parser.CommandHandler;
+import net.wasdev.gameon.room.engine.parser.CommandTemplate;
+import net.wasdev.gameon.room.engine.parser.Item;
+import net.wasdev.gameon.room.engine.parser.Node.Type;
+import net.wasdev.gameon.room.engine.parser.ParsedCommand;
 
-public class Use extends RoomCommand {
-	public Use(){
+public class Use extends CommandHandler {
+
+	//TODO: one day we may want to allow using items with Players or Exits. 	
+	//
+	// for now, we just cover every 'use this item' and 'use this item with that item' templates.
+	
+	private final static CommandTemplate useItemInRoom = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.ROOM_ITEM).build();
+	private final static CommandTemplate useItemInInventory= new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.INVENTORY_ITEM).build();
+	private final static CommandTemplate useItemInContainer = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build();
+	
+	private final static CommandTemplate useItemInRoomWithRoomItem = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.ROOM_ITEM).build(Type.LINKWORD,"With").build(Type.ROOM_ITEM).build();
+	private final static CommandTemplate useItemInRoomWithInventoryItem = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.ROOM_ITEM).build(Type.LINKWORD,"With").build(Type.INVENTORY_ITEM).build();
+	private final static CommandTemplate useItemInRoomWithItemInContainer = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.ROOM_ITEM).build(Type.LINKWORD,"With").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build();
+
+	private final static CommandTemplate useItemInInventoryWithRoomItem = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.INVENTORY_ITEM).build(Type.LINKWORD,"With").build(Type.ROOM_ITEM).build();
+	private final static CommandTemplate useItemInInventoryWithInventoryItem = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.INVENTORY_ITEM).build(Type.LINKWORD,"With").build(Type.INVENTORY_ITEM).build();
+	private final static CommandTemplate useItemInInventoryWithItemInContainer = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.INVENTORY_ITEM).build(Type.LINKWORD,"With").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build();
+
+	private final static CommandTemplate useItemInContainerWithRoomItem = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build(Type.LINKWORD,"With").build(Type.ROOM_ITEM).build();
+	private final static CommandTemplate useItemInContainerWithInventoryItem = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build(Type.LINKWORD,"With").build(Type.INVENTORY_ITEM).build();
+	private final static CommandTemplate useItemInContainerWithItemInContainer = new CommandTemplateBuilder().build(Type.VERB,"Use").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build(Type.LINKWORD,"With").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build();
+	
+	private static final Set<CommandTemplate> templates = Collections.unmodifiableSet(new LinkedHashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[]{
+			useItemInRoom,
+			useItemInInventory,
+			useItemInContainer,
+			useItemInInventoryWithRoomItem,
+			useItemInInventoryWithInventoryItem,
+			useItemInInventoryWithItemInContainer,
+			useItemInRoomWithRoomItem,
+			useItemInRoomWithInventoryItem,
+			useItemInRoomWithItemInContainer,
+			useItemInContainerWithRoomItem,
+			useItemInContainerWithInventoryItem,
+			useItemInContainerWithItemInContainer
+	})));
+	
+	
+	@Override
+	public Set<CommandTemplate> getTemplates() {
+		return templates;
 	}
-	public boolean isHidden(){ return false; }
-	public String getVerb(){
-		return "USE";
+
+	@Override
+	public boolean isHidden() {
+		return false;
 	}
-	public void process(String execBy, String cmd, Room room){
+	
+	@Override
+	public void processCommand(Room room, String execBy, ParsedCommand command) {
 		User u = room.getUserById(execBy);
-		if(u!=null){
-			String restOfCommand = getCommandWithoutVerbAsString(cmd);
-			String itemName = getItemNameFromCommand(restOfCommand, room, u);
-			//see if we can find the item in the room or inventory
-			ItemDesc item = findItemInRoomOrInventory(u, itemName, room);
-			if(item==null){
-				if(restOfCommand.trim().length()==0){
-					room.playerEvent(execBy, "Normally, in these text adventurey things, you'd specify the item you wish to use, but you win a prize for being different.",null);
-				}else{
-					room.playerEvent(execBy, "You search for the "+restOfCommand+" to use, but cannot seem to locate it anywhere!",null);
+		if(u!=null){ 
+			//every template has an item as the first arg.
+			Item i = (Item)command.args.get(0);
+			if(i.item.useHandler!=null){
+				//remove the use verb, the item use handlers do not expect it.
+				String cmd = command.originalCommand;
+				cmd = Parser.removeFirstWordFromCommand(cmd);
+				boolean result = Parser.processCommandHandler(i.item.useHandler, cmd, room, execBy);
+				//none of the templates for this handler processed this instance.
+				//let the handler generate the failure message.
+				if(!result){
+					i.item.useHandler.processUnknown(room, execBy, command.originalCommand, cmd);
 				}
 			}else{
-				if(item.handler!=null){
-					item.handler.processCommand(item, execBy, cmd, room);
-				}else{
-					room.playerEvent(execBy, "You stare confused at the "+itemName+" unsure quite what to do with it!",null);
-				}
+				room.playerEvent(execBy, "I'm sorry, but it doesn't look like you can use "+i.item.name, null);
 			}
-		}else{
-			System.out.println("Cannot process use command for user "+execBy+" as they are not known to the room");
 		}
 	}
+
+	@Override
+	public void processUnknown(Room room, String execBy, String origCmd, String cmdWithoutVerb) {
+		if(cmdWithoutVerb.trim().length()>0){
+			room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to use "+cmdWithoutVerb, null);
+		}else{
+			room.playerEvent(execBy, "Normally, in these text adventurey things, you'd specify the item you wish to use, but you win a prize for being different.",null);
+		}
+	}
+
 }

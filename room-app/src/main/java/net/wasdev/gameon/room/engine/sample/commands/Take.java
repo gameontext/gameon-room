@@ -1,104 +1,84 @@
 package net.wasdev.gameon.room.engine.sample.commands;
 
-import net.wasdev.gameon.room.engine.RoomCommand;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.User;
-import net.wasdev.gameon.room.engine.meta.ContainerDesc;
-import net.wasdev.gameon.room.engine.meta.ItemDesc;
+import net.wasdev.gameon.room.engine.parser.CommandHandler;
+import net.wasdev.gameon.room.engine.parser.CommandTemplate;
+import net.wasdev.gameon.room.engine.parser.Item;
+import net.wasdev.gameon.room.engine.parser.ItemInContainerItem;
+import net.wasdev.gameon.room.engine.parser.Node.Type;
+import net.wasdev.gameon.room.engine.parser.ParsedCommand;
 
-public class Take extends RoomCommand {
-	public Take(){
+public class Take extends CommandHandler {
+
+	private static final CommandTemplate takeItemInInventory = new CommandTemplateBuilder().build(Type.VERB, "Take").build(Type.INVENTORY_ITEM).build();
+	private static final CommandTemplate takeItemInRoom = new CommandTemplateBuilder().build(Type.VERB, "Take").build(Type.ROOM_ITEM).build();
+	private static final CommandTemplate takeItemFromContainer = new CommandTemplateBuilder().build(Type.VERB, "Take").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build(Type.LINKWORD,"from").build(Type.CONTAINER_ITEM).build();
+	
+	private static final Set<CommandTemplate> templates = Collections.unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[]{
+			takeItemInRoom,
+			takeItemFromContainer,
+			takeItemInInventory
+	})));
+	
+	
+	@Override
+	public Set<CommandTemplate> getTemplates() {
+		return templates;
 	}
-	public boolean isHidden(){ return false; }
-	public String getVerb(){
-		return "TAKE";
+
+	@Override
+	public boolean isHidden() {
+		return false;
 	}
-	public void process(String execBy, String cmd, Room room){
+
+	@Override
+	public void processCommand(Room room, String execBy, ParsedCommand command) {
+		String key = command.key;
 		User u = room.getUserById(execBy);
-		if(u!=null){
-			String restOfCommand = getCommandWithoutVerbAsString(cmd);
-			String itemName = getItemNameFromCommand(restOfCommand, room, u);
-			//see if we can find the item in the room.
-			ItemDesc item = findItemInRoom(itemName, room);
-			if(item!=null){
-				restOfCommand = getCommandWithoutVerbAndItemAsString(cmd, item).trim();
-				if("".equals(restOfCommand.trim())){					
-					if(item.takeable){
-						//we have found a match!						
-						//add to the player
-						u.inventory.add(item);
-						//remove from the room. 
-						//(using copy on write, so it's safe to call remove on list, else we'd call remove on the iter)
-						room.getItems().remove(item);
-						
-						room.playerEvent(execBy, "You pick up the "+item.name, u.username+" picks up the "+item.name);
+		if(u!=null){ 
+			if(key.equals(takeItemInRoom.key)){
+				//player tried to take item in room
+				Item i = (Item)command.args.get(0);
+				if(i.item.takeable){
+					room.getItems().remove(i.item);
+					u.inventory.add(i.item);
+					room.playerEvent(execBy, "You pick up the "+i.item.name, u.username+" picks up the "+i.item.name);
+				}else{
+					room.playerEvent(execBy, "You try really hard to pick up the "+i.item.name+" but it's just too tiring.", u.username+" tries to pick up the "+i.item.name+" and fails.");
+				}
+			}else if(key.equals(takeItemFromContainer.key)){
+				//player tried to take item from a container.
+				ItemInContainerItem i = (ItemInContainerItem)command.args.get(0);
+				if(i.item.takeable){
+					//if we have no access handler, or if we are approved.. then we can take the item
+					if(i.container.access==null || i.container.access.verifyAccess(i.container, execBy, room)){
+						i.container.items.remove(i.item);
+						u.inventory.add(i.item);
+						room.playerEvent(execBy, "You take the "+i.item.name+" from the "+i.container.name, u.username+" takes the "+i.item.name+" from the "+i.container.name);
 					}else{
-						room.playerEvent(execBy, "You try really hard to pick up the "+item.name+" but it's just too tiring.", u.username+" tries to pick up the "+item.name+" and fails.");
+						//the container denied us access, we won't reply with the item name here, only the container
+						room.playerEvent(execBy, "You can't seem to reach inside the "+i.container.name+" to do that.", null);
 					}
 				}else{
-					room.playerEvent(execBy, "You reach out to take the "+item.name+" but then are confused by what you meant by '"+restOfCommand+"' so leave it there instead.",null);
-				}
+					room.playerEvent(execBy, "You try really hard to take the "+i.item.name+" from the "+i.container.name+" but it keeps slipping from your grasp.", u.username+" tries to take the "+i.item.name+" from the "+i.container.name+" and fails.");
+				}				
 			}else{
-				//item was not in room.. this gets a little messy.. as we now need to find items inside containers
-				item = findItemInContainers(itemName, room);
-				if(item!=null){
-					restOfCommand = getCommandWithoutVerbAndItemAsString(cmd, item);
-					String nextWord = getFirstWordFromCommand(restOfCommand);
-					if("FROM".equalsIgnoreCase(nextWord)){
-						//skip from
-						restOfCommand = getCommandWithoutVerbAsString(restOfCommand);
-						//from what?
-						String otherItemName = getItemNameFromCommand(restOfCommand, room, u);
-						if(otherItemName!=null){
-							ItemDesc otherItem = findItemInRoomOrInventory(u, otherItemName, room);
-							if(otherItem instanceof ContainerDesc){
-								ContainerDesc box = (ContainerDesc)otherItem;
-								//access check..
-								boolean accessAllowed = true;
-								if(box.access !=null ){
-									accessAllowed = box.access.verifyAccess(box, execBy, room);
-								}
-								if(accessAllowed){
-									if(box.items.contains(item)){
-										room.playerEvent(execBy, "You take the "+item.name+" from the "+otherItem.name, u.username+" takes the "+item.name+" from the "+otherItem.name);
-										box.items.remove(item);
-										u.inventory.add(item);
-									}else{
-										room.playerEvent(execBy, "You look in the "+otherItem.name+" but the "+item.name+" does not appear to be there to take.", null);
-									}
-								}else{
-									room.playerEvent(execBy, "You appear unable to take things from "+box.name, null);
-								}
-							}else{
-								room.playerEvent(execBy, "The "+otherItemName+" doesn't look like the kind of thing you should be rummaging around inside.", null);
-							}
-						}else{
-							if(restOfCommand.trim().length()>0){
-								room.playerEvent(execBy, "I'm really not sure where to find '"+restOfCommand+"' to do that with", null);
-							}else{
-								room.playerEvent(execBy, "You want to take the "+item.name+" from where??!", null);
-							}
-						}
-					}else{
-						//if we got here, the item was in a container in the room, and the player didn't use the word 'from'
-						//but 
-						String originalInputWithoutCommand = getCommandWithoutVerbAsString(cmd);
-						if(restOfCommand.trim().length()>0){
-							room.playerEvent(execBy, "You reach out to take the "+originalInputWithoutCommand+" but then are confused by what you meant by '"+restOfCommand+"' so leave it there instead.",null);
-						}else{
-							room.playerEvent(execBy, "You search for the "+originalInputWithoutCommand+" to pick up, but cannot seem to locate it anywhere!",null);
-						}
-					}
-				}else{
-					if(restOfCommand.trim().length()>0){
-						room.playerEvent(execBy, "You search for the "+restOfCommand+" to pick up, but cannot seem to locate it anywhere!",null);
-					}else{
-						room.playerEvent(execBy, "Here is a list of words that rhyme with Take, Rake, Lake, Bake, Fake. If you wish to pick up an item, you need to say which item you wish to Take.",null);
-					}
-				}
+				//tried to take an item you are already holding..
+				Item i = (Item)command.args.get(0);
+				room.playerEvent(execBy, "You can't take the "+i.item.name+" because you already have it.", null);
 			}
-		}else{
-			System.out.println("Cannot process take command for user "+execBy+" as they are not known to the room");
 		}
 	}
+
+	@Override
+	public void processUnknown(Room room, String execBy, String origCmd, String cmdWithoutVerb) {
+		room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to take "+cmdWithoutVerb, null);
+	}
+
 }

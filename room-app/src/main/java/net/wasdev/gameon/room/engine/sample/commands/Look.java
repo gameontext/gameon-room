@@ -1,27 +1,54 @@
 package net.wasdev.gameon.room.engine.sample.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import net.wasdev.gameon.room.engine.RoomCommand;
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.User;
-import net.wasdev.gameon.room.engine.meta.ExitDesc;
 import net.wasdev.gameon.room.engine.meta.ItemDesc;
+import net.wasdev.gameon.room.engine.parser.CommandHandler;
+import net.wasdev.gameon.room.engine.parser.CommandTemplate;
+import net.wasdev.gameon.room.engine.parser.Item;
+import net.wasdev.gameon.room.engine.parser.Node.Type;
+import net.wasdev.gameon.room.engine.parser.ParsedCommand;
 
-public class Look extends RoomCommand {
-	public Look(){
+public class Look extends CommandHandler {
+
+	private static final CommandTemplate look = new CommandTemplateBuilder().build(Type.VERB, "Look").build();
+	private static final CommandTemplate lookAtRoomItem = new CommandTemplateBuilder().build(Type.VERB, "Look").build(Type.LINKWORD,"AT").build(Type.ROOM_ITEM).build();
+	private static final CommandTemplate lookAtInventoryItem = new CommandTemplateBuilder().build(Type.VERB, "Look").build(Type.LINKWORD,"AT").build(Type.INVENTORY_ITEM).build();
+	private static final CommandTemplate lookInContainerItem = new CommandTemplateBuilder().build(Type.VERB, "Look").build(Type.LINKWORD,"IN").build(Type.CONTAINER_ITEM).build();
+	private static final CommandTemplate lookAtItemInContainer = new CommandTemplateBuilder().build(Type.VERB, "Look").build(Type.LINKWORD,"IN").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build();
+	
+	private static final Set<CommandTemplate> templates = Collections.unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[]{
+			look,
+			lookAtRoomItem,
+			lookAtInventoryItem,
+			lookInContainerItem,
+			lookAtItemInContainer			
+	})));
+	
+	
+	@Override
+	public Set<CommandTemplate> getTemplates() {
+		return templates;
 	}
-	public String getVerb(){
-		return "LOOK";
+
+	@Override
+	public boolean isHidden() {
+		return false;
 	}
-	public boolean isHidden(){ return false; }
-	public void process(String execBy, String cmd, Room room){
+
+	@Override
+	public void processCommand(Room room, String execBy, ParsedCommand command) {
+		String key = command.key;
 		User u = room.getUserById(execBy);
 		if(u!=null){
-			//did they do /look ? or /look object or /look at object ?
-			String restOfCommand = getCommandWithoutVerbAsString(cmd);
-			if(restOfCommand.length()==0){					
+			if(key.equals(look.key)){
 				List<String> invItems = new ArrayList<String>();
 				List<String> roomItems = new ArrayList<String>();
 				for(ItemDesc i : room.getItems()){
@@ -31,34 +58,20 @@ public class Look extends RoomCommand {
 					invItems.add(i.name);
 				}
 				room.locationEvent(execBy, room, room.getRoomDescription(), room.getExits(), roomItems, invItems);
-			}else{
-				//priority goes to looking if we can match an item next.. in case anyone adds an "AT AT" as an item ;p
-				String item = getItemNameFromCommand(restOfCommand, room, u);
-				if(item==null){				
-					String nextWord = getFirstWordFromCommand(restOfCommand);
-					if("AT".equalsIgnoreCase(nextWord)){
-						restOfCommand = getCommandWithoutVerbAsString(restOfCommand);
-						item = getItemNameFromCommand(restOfCommand, room, u);
-					}else{
-						//wasn't at.. is it a direction?
-						for(ExitDesc ed : room.getExits()){
-							if(ed.direction.toString().toUpperCase().equals(nextWord.toUpperCase()) || ed.direction.toLongString().toUpperCase().equals(nextWord.toUpperCase())){
-								room.playerEvent(execBy, ed.handler.getDescription(execBy, ed, room), null);
-								//early return.. avoid sending the 'rest of command' error below =)
-								return;
-							}
-						}
-					}
-				}
-				if(item!=null){
-					//delegate to examine.
-					Examine examineCommand = new Examine();						
-					examineCommand.process(execBy, "EXAMINE "+item, room);
-				}else{
-					room.playerEvent(execBy, "You pull out your magnifying glass to look at '"+restOfCommand+"' but realise you have no idea what that is.", null);
-				}
-				
+			}else if(key.equals(lookAtRoomItem.key) || key.equals(lookAtInventoryItem.key) || key.equals(lookAtItemInContainer.key)){
+				Item i = (Item)command.args.get(1);
+				room.command(execBy, "Examine "+i.item.name);
+			}else if(key.equals(lookInContainerItem.key)){
+				//we could treat this differently if we wanted to handle 'look in container' differently from 'look at container'
+				Item i = (Item)command.args.get(1);
+				room.command(execBy, "Examine "+i.item.name);
 			}
 		}
 	}
+
+	@Override
+	public void processUnknown(Room room, String execBy, String origCmd, String cmdWithoutVerb) {
+		room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to look "+cmdWithoutVerb, null);
+	}
+
 }

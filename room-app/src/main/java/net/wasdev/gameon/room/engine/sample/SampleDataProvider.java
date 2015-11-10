@@ -7,10 +7,10 @@ import java.util.List;
 
 import net.wasdev.gameon.room.engine.DataProvider;
 import net.wasdev.gameon.room.engine.Room;
-import net.wasdev.gameon.room.engine.RoomCommand;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
 import net.wasdev.gameon.room.engine.meta.ItemDesc;
 import net.wasdev.gameon.room.engine.meta.RoomDesc;
+import net.wasdev.gameon.room.engine.parser.CommandHandler;
 import net.wasdev.gameon.room.engine.sample.commands.Drop;
 import net.wasdev.gameon.room.engine.sample.commands.Examine;
 import net.wasdev.gameon.room.engine.sample.commands.Go;
@@ -25,19 +25,20 @@ import net.wasdev.gameon.room.engine.sample.commands.Use;
 import net.wasdev.gameon.room.engine.sample.items.Items;
 
 public class SampleDataProvider implements DataProvider{
-
-	static List<RoomCommand> globalCommands = Arrays.asList(new RoomCommand[]{
+	
+	static List<CommandHandler> globalCommands = Arrays.asList(new CommandHandler[]{
+			new Drop(),
+			new Examine(),
 			new Go(),
-			new Reset(), 
-			new ListPlayers(), 
-			new Look(), 
-			new Inventory(), 
-			new Drop(), 
-			new Take(), 
-			new Quit(), 
-			new Use(), 
-			new Examine(), 
-			new Help()});
+			new Help(),
+			new Inventory(),
+			new ListPlayers(),
+			new Look(),
+			new Quit(),
+			new Reset(),
+			new Take(),
+			new Use()			
+	});
 	
 	ExitDesc barToBasement = new ExitDesc("Basement",ExitDesc.Direction.DOWN,"A flight of stairs leading into a dark basement");
 	RoomDesc bar = new RoomDesc("RecRoom",

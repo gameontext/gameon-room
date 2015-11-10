@@ -1,45 +1,51 @@
 package net.wasdev.gameon.room.engine.sample.commands;
 
-import net.wasdev.gameon.room.engine.Room;
-import net.wasdev.gameon.room.engine.RoomCommand;
-import net.wasdev.gameon.room.engine.User;
-import net.wasdev.gameon.room.engine.meta.ItemDesc;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-public class Drop extends RoomCommand {
-	public Drop(){
+import net.wasdev.gameon.room.engine.Room;
+import net.wasdev.gameon.room.engine.User;
+import net.wasdev.gameon.room.engine.parser.CommandHandler;
+import net.wasdev.gameon.room.engine.parser.CommandTemplate;
+import net.wasdev.gameon.room.engine.parser.Item;
+import net.wasdev.gameon.room.engine.parser.Node.Type;
+import net.wasdev.gameon.room.engine.parser.ParsedCommand;
+
+public class Drop extends CommandHandler {
+
+	private static final CommandTemplate dropItemInInventory = new CommandTemplateBuilder().build(Type.VERB, "Drop").build(Type.INVENTORY_ITEM).build();
+	
+	private static final Set<CommandTemplate> templates = Collections.unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[]{
+			dropItemInInventory
+	})));
+	
+	
+	@Override
+	public Set<CommandTemplate> getTemplates() {
+		return templates;
 	}
-	public boolean isHidden(){ return false; }
-	public String getVerb(){
-		return "DROP";
+
+	@Override
+	public boolean isHidden() {
+		return false;
 	}
-	public void process(String execBy, String cmd, Room room){
+
+	@Override
+	public void processCommand(Room room, String execBy, ParsedCommand command) {
 		User u = room.getUserById(execBy);
-		if(u!=null){
-			String itemName = getCommandWithoutVerbAsString(cmd);
-			//see if we can find the item in the user.
-			ItemDesc item = findItemInInventory(itemName, u);
-			if(item!=null){
-				//add to the room
-				room.getItems().add(item);
-				//remove from the user.
-				//(using copy on write, so it's safe to call remove on list, else we'd call remove on the iter)
-				u.inventory.remove(item);
-				
-				//if the item requested it.. clear its state.
-				if(item.clearStateOnDrop){
-					item.setState("");
-				}						
-				room.playerEvent(execBy, "You drop the "+item.name, u.username+" drops the "+item.name);
-			}else{
-				if(itemName.trim().length()>0){
-					room.playerEvent(execBy, "You try to drop the "+itemName+" but it appears you don't actually have one of those.", null);
-				}else{
-					room.playerEvent(execBy, "The bassline drops away.. leaving the crowd without a beat. Alternatively, specify which item you wish to drop next time.", null);
-				}
-			}
-			
-		}else{
-			System.out.println("Cannot process drop command for user "+execBy+" as they are not known to the room");
+		if(u!=null){ 
+			Item i = (Item)command.args.get(0);
+			room.getItems().add(i.item);
+			u.inventory.remove(i.item);
+			room.playerEvent(execBy, "You drop the "+i.item.name, u.username+" drops the "+i.item.name);
 		}
 	}
+
+	@Override
+	public void processUnknown(Room room, String execBy, String origCmd, String cmdWithoutVerb) {
+		room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to drop "+cmdWithoutVerb, null);
+	}
+
 }

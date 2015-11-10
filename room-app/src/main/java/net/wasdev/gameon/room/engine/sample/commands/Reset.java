@@ -1,17 +1,38 @@
 package net.wasdev.gameon.room.engine.sample.commands;
 
-import net.wasdev.gameon.room.engine.RoomCommand;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.User;
+import net.wasdev.gameon.room.engine.parser.CommandHandler;
+import net.wasdev.gameon.room.engine.parser.CommandTemplate;
+import net.wasdev.gameon.room.engine.parser.Node.Type;
+import net.wasdev.gameon.room.engine.parser.ParsedCommand;
 
-public class Reset extends RoomCommand {
-	public Reset(){
+public class Reset extends CommandHandler {
+
+	private static final CommandTemplate reset = new CommandTemplateBuilder().build(Type.VERB, "Reset").build();
+	
+	private static final Set<CommandTemplate> templates = Collections.unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[]{
+			reset
+	})));
+	
+	
+	@Override
+	public Set<CommandTemplate> getTemplates() {
+		return templates;
 	}
-	public boolean isHidden(){ return true; }
-	public String getVerb(){
-		return "RESET";
+
+	@Override
+	public boolean isHidden() {
+		return true;
 	}
-	public void process(String execBy, String cmd, Room room){
+
+	@Override
+	public void processCommand(Room room, String execBy, ParsedCommand command) {
 		//we'll add the ability to identify admin users via the db later
 		if("twitter:281946000".equals(execBy)){
 			room.resetRoom();
@@ -25,4 +46,10 @@ public class Reset extends RoomCommand {
 			}
 		}
 	}
+
+	@Override
+	public void processUnknown(Room room, String execBy, String origCmd, String cmdWithoutVerb) {
+		room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to reset "+cmdWithoutVerb, null);
+	}
+
 }

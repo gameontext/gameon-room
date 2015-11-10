@@ -17,8 +17,6 @@ package net.wasdev.gameon.room;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,10 +26,6 @@ import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
 import javax.websocket.Session;
 
 import net.wasdev.gameon.room.engine.Room;
@@ -48,7 +42,7 @@ public class RoomWS extends Endpoint{
 		this.srrp=srrp;
 	}
 	
-	private Map<Session,MessageHandler> handlersBySession = new ConcurrentHashMap<Session,MessageHandler>();
+	private Map<Session,MessageHandler.Whole<String>> handlersBySession = new ConcurrentHashMap<Session,MessageHandler.Whole<String>>();
 	
 	private static class SessionMessageHandler implements MessageHandler.Whole<String> {
 		private final Session session;
@@ -66,22 +60,43 @@ public class RoomWS extends Endpoint{
 			}
 		}
 	}
-    @OnOpen
+
+	@Override
     public void onOpen(final Session session, EndpointConfig ec) {
+		
+        Log.endPoint(this, "onOpen called against room "+this.room.getRoomId());
+        if(srrp.activeSessions.size()==0){
+        	Log.endPoint(this, " No sessions known.");
+        }
+        for(Session s : srrp.activeSessions){
+        	Log.endPoint(this, " Session: "+s.getId());
+        	Log.endPoint(this, "   handlers: "+s.getMessageHandlers().size());
+        	int mhc=0;
+        	for(MessageHandler m : s.getMessageHandlers()){
+        		if(m instanceof SessionMessageHandler){
+        			SessionMessageHandler smh = (SessionMessageHandler)m;
+        			Log.endPoint(this, "    ["+mhc+"] SessionMessageHandler for session "+smh.session.getId()+" linked to room "+smh.owner.room.getRoomId());
+        		}else{
+        			Log.endPoint(this, "    ["+mhc+"] unknown handler");
+        		}
+        		mhc++;
+        	}
+        }
+		
         // (lifecycle) Called when the connection is opened
         srrp.addSession(session);
     
-		MessageHandler handlerForSession = new SessionMessageHandler(session, this);
+		MessageHandler.Whole<String> handlerForSession = new SessionMessageHandler(session, this);
 		
-		MessageHandler fromMap = handlersBySession.get(session);
-        MessageHandler chosen = fromMap!=null?fromMap:handlerForSession;
+		MessageHandler.Whole<String> fromMap = handlersBySession.get(session);
+		MessageHandler.Whole<String> chosen = fromMap!=null?fromMap:handlerForSession;
         handlersBySession.put(session,chosen);
-        session.addMessageHandler(chosen);
         
-        Log.endPoint(this, "onOpen called against room "+this.room.getRoomId());
+        session.addMessageHandler(String.class, chosen);
+        
+        Log.endPoint(this, "after opOpen room "+this.room.getRoomId());
         for(Session s : srrp.activeSessions){
         	Log.endPoint(this, " Session: "+s.getId());
-        	Log.endPoint(this, "   user? - "+s.getUserProperties().get(Constants.USERNAME));
         	Log.endPoint(this, "   handlers: "+s.getMessageHandlers().size());
         	int mhc=0;
         	for(MessageHandler m : s.getMessageHandlers()){
@@ -97,7 +112,7 @@ public class RoomWS extends Endpoint{
 
     }
 
-    @OnClose
+    @Override
     public void onClose(Session session, CloseReason reason) {
         // (lifecycle) Called when the connection is closed, treat this as the player has left the room
         srrp.removeSession(session);
@@ -123,8 +138,8 @@ public class RoomWS extends Endpoint{
         }
     }
 
-    @OnMessage
     public void receiveMessage(String message, Session session) throws IOException {
+    	System.out.println("ROOMX: ["+this.hashCode()+":"+this.room.getRoomId()+"] sess:["+session.hashCode()+":"+session.getId()+" mess:"+message);
     	String[] contents = Message.splitRouting(message);
     	if(contents[0].equals("roomHello")) {
     		addNewPlayer(session, contents[2]);
@@ -177,11 +192,11 @@ public class RoomWS extends Endpoint{
     	room.removeUserFromRoom(userid);
     }
     
-    @OnError
-    public void onError(Throwable t) {
+    @Override
+    public void onError(Session session, Throwable thr) {
         // (lifecycle) Called if/when an error occurs and the connection is
         // disrupted
-        Log.endPoint(this, "oops: " + t);
+        Log.endPoint(this, "oops: " + thr);
     }
     
 }
