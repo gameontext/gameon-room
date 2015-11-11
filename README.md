@@ -1,5 +1,7 @@
 # gameon-room
 
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/0c29c501ba11477f944e109b85817593)](https://www.codacy.com/app/gameontext/gameon-room)
+
 This is a service to manage the various rooms available in a game. The primary entry point for a player will be the concierge, who manages connecting you between rooms. After that each room has a room service (heh) and players connect to each service and disconnect from the previous one to move between rooms.
 
 A room is assumed to have a number of labeled exits, but it is up to each concierge instance to decide which room will be on the other side of an exit. This might mean one way doors, warp holes, etc. As the wiring is up the concierge it could be dynamic.
