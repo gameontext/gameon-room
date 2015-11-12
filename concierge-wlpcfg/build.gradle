@@ -47,7 +47,8 @@ task createNewContainer(type: DockerCreateContainer) {
 	targetImageId { "gameon-concierge" }
 	containerName = "gameon-concierge"
 	portBindings = ['9081:9081']
-	env = ["LICENSE=accept"]
+	env = ["LICENSE=accept",
+			"LOGGING_DOCKER_HOST=" + System.getenv('LOGGING_DOCKER_HOST')]
 }
 
 task startNewContainer(type: DockerStartContainer) {

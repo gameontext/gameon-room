@@ -49,7 +49,8 @@ task createNewContainer(type: DockerCreateContainer) {
 	portBindings = ['9080:9080']
 	env = ["LICENSE=accept", 
 			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
-			"service_room=" + System.getenv('SERVICE_ROOM')]
+			"service_room=" + System.getenv('SERVICE_ROOM'),
+			"LOGGING_DOCKER_HOST=" + System.getenv('LOGGING_DOCKER_HOST')]
 }
 
 task startNewContainer(type: DockerStartContainer) {
