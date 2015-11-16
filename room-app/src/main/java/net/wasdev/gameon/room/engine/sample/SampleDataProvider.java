@@ -40,11 +40,13 @@ public class SampleDataProvider implements DataProvider{
 			new Help()});
 	
 	ExitDesc barToBasement = new ExitDesc("Basement",ExitDesc.Direction.DOWN,"A flight of stairs leading into a dark basement");
+	ExitDesc barToNode = new ExitDesc("TheNodeRoom",ExitDesc.Direction.EAST,"A strange looking door that has dot js written on it");
+	
 	RoomDesc bar = new RoomDesc("RecRoom",
             "Rec Room","A dimly lit shabbily decorated room, that appears tired and dated. It looks like someone attempted to provide kitchen facilities here once, but you really wouldn't want to eat anything off those surfaces!",
             true, //is a starter location.
             new ItemDesc[] {Items.mug,Items.coffeeMachine,Items.stilettoHeels,Items.jukebox,Items.cupboard},
-            new ExitDesc[]{barToBasement});
+            new ExitDesc[]{barToBasement,barToNode});
 	
 	ExitDesc basementToBar = new ExitDesc("RecRoom",ExitDesc.Direction.UP,"A flight of stairs leading back to the Rec Room");
 	RoomDesc basement = new RoomDesc("Basement",
