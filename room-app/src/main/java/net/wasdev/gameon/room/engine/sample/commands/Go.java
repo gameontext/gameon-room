@@ -48,7 +48,7 @@ public class Go extends CommandHandler {
 
 	@Override
 	public void processUnknown(Room room, String execBy, String origCmd, String cmdWithoutVerb) {
-		room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to listplayers " + cmdWithoutVerb, null);
+		room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to go " + cmdWithoutVerb, null);
 	}
 
 }
