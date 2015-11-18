@@ -37,7 +37,7 @@ public class Exits extends CommandHandler {
 
 	@Override
 	public void processUnknown(Room room, String execBy, String origCmd, String cmdWithoutVerb) {
-		room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to quit "+cmdWithoutVerb, null);
+		room.playerEvent(execBy, "I'm sorry, I'm not sure how to list the exits of "+cmdWithoutVerb, null);
 	}
 
 }
