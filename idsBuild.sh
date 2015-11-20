@@ -27,11 +27,13 @@ echo Building projects using gradle...
 ./gradlew build
 echo Building and Starting Concierge Docker Image...
 cd concierge-wlpcfg
+sed -i s/PLACEHOLDER_ADMIN_PASSWORD/$ADMIN_PASSWORD/g ./Dockerfile
 ../gradlew buildDockerImage
 ../gradlew removeCurrentContainer
 ../gradlew startNewContainer
 echo Building and Starting Room Docker Image...
 cd ../room-wlpcfg
+sed -i s/PLACEHOLDER_ADMIN_PASSWORD/$ADMIN_PASSWORD/g ./Dockerfile
 ../gradlew buildDockerImage
 ../gradlew removeCurrentContainer
 ../gradlew startNewContainer
