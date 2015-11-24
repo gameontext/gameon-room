@@ -29,6 +29,8 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.websocket.Endpoint;
 import javax.websocket.Session;
@@ -52,8 +54,8 @@ import net.wasdev.gameon.room.engine.meta.ExitDesc;
 public class LifecycleManager implements ServerApplicationConfig {
 	private static final String ENV_CONCIERGE_SVC = "service_concierge";
 	private static final String ENV_ROOM_SVC = "service_room";
-
 	private String conciergeLocation = null;
+	private String registrationSecret;	
 	
 	Engine e = Engine.getEngine();
 	
@@ -201,6 +203,12 @@ public class LifecycleManager implements ServerApplicationConfig {
 			throw new ServletException("The location for the concierge service cold not be "
 					+ "found in a system property or environment variable named : " + ENV_CONCIERGE_SVC);
 		}
+		try{
+			registrationSecret = (String) new InitialContext().lookup("registrationSecret");		
+		}catch(NamingException e){}
+		if(registrationSecret==null){
+			throw new ServletException("registrationSecret was not found, check server.xml/server.env");
+		}
 	}
 
 	private static class RoomWSConfig extends ServerEndpointConfig.Configurator {
@@ -221,6 +229,11 @@ public class LifecycleManager implements ServerApplicationConfig {
 	
 	private Set<ServerEndpointConfig> registerRooms(Collection<Room> rooms) {
 		Client client = ClientBuilder.newClient();
+		
+		//add the apikey handler for the registration request.
+		ApiKey apikey = new ApiKey("roomRegistration",registrationSecret);		
+		client.register(apikey);
+		
 		WebTarget target = client.target(conciergeLocation);
 		Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
 		for(Room room : rooms) {

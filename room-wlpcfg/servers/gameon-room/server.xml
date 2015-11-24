@@ -14,6 +14,9 @@
     <httpEndpoint host="*" httpPort="9080" httpsPort="9445" id="defaultHttpEndpoint"/>
 
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
+    
+    <!-- Our key that allows us to register rooms -->
+    <jndiEntry jndiName="registrationSecret" value="${env.REGISTRATION_SECRET}"/>
 
 	<logging traceSpecification="*=info"/>
 	
