@@ -56,22 +56,23 @@ public class LifecycleManager implements ServerApplicationConfig {
 	private static final String ENV_ROOM_SVC = "service_room";
 	private String conciergeLocation = null;
 	private String registrationSecret;	
-	
+
 	Engine e = Engine.getEngine();
-	
+
 	public static class SessionRoomResponseProcessor implements net.wasdev.gameon.room.engine.Room.RoomResponseProcessor{
 		AtomicInteger counter = new AtomicInteger(0);
-		
-	    private void generateEvent(Session session, JsonObject content, String userID, boolean selfOnly, int bookmark) throws IOException {
-	    	JsonObjectBuilder response = Json.createObjectBuilder();
-	    	response.add("type", "event");
-	    	response.add("content", content);
-	    	response.add("bookmark", bookmark);
-	    	
-	    	String msg = "player," + (selfOnly?userID:"*") + "," + response.build().toString();
-	    	System.out.println("ROOM(PE): sending to session "+session.getId()+" message:"+msg);
-	    	session.getBasicRemote().sendText(msg);
-	    }
+
+		private void generateEvent(Session session, JsonObject content, String userID, boolean selfOnly, int bookmark) throws IOException {
+			JsonObjectBuilder response = Json.createObjectBuilder();
+			response.add("type", "event");
+			response.add("content", content);
+			response.add("bookmark", bookmark);
+
+			String msg = "player," + (selfOnly?userID:"*") + "," + response.build().toString();
+			System.out.println("ROOM(PE): sending to session "+session.getId()+" message:"+msg);
+			session.getBasicRemote().sendText(msg);
+		}
+		@Override
 		public void playerEvent(String senderId, String selfMessage, String othersMessage){
 			//System.out.println("Player message :: from("+senderId+") onlyForSelf("+String.valueOf(selfMessage)+") others("+String.valueOf(othersMessage)+")");
 			JsonObjectBuilder content = Json.createObjectBuilder();
@@ -91,19 +92,20 @@ public class LifecycleManager implements ServerApplicationConfig {
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
-			}		
+			}
 		}
-	    private void generateRoomEvent(Session session, JsonObject content, int bookmark) throws IOException {
-	    	JsonObjectBuilder response = Json.createObjectBuilder();
-	    	response.add("type", "event");
-	    	response.add("content", content);
-	    	response.add("bookmark", bookmark);
-	    	
-	    	String msg = "player,*," + response.build().toString();
-	    	System.out.println("ROOM(RE): sending to session "+session.getId()+" message:"+msg);
-	    	
-	    	session.getBasicRemote().sendText(msg);
-	    }
+		private void generateRoomEvent(Session session, JsonObject content, int bookmark) throws IOException {
+			JsonObjectBuilder response = Json.createObjectBuilder();
+			response.add("type", "event");
+			response.add("content", content);
+			response.add("bookmark", bookmark);
+
+			String msg = "player,*," + response.build().toString();
+			System.out.println("ROOM(RE): sending to session "+session.getId()+" message:"+msg);
+
+			session.getBasicRemote().sendText(msg);
+		}
+		@Override
 		public void roomEvent(String s){
 			//System.out.println("Message sent to everyone :: "+s);
 			JsonObjectBuilder content = Json.createObjectBuilder();
@@ -116,7 +118,7 @@ public class LifecycleManager implements ServerApplicationConfig {
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
-			}	
+			}
 		}
 		public void chatEvent(String username, String msg){
 			JsonObjectBuilder content = Json.createObjectBuilder();
@@ -127,25 +129,26 @@ public class LifecycleManager implements ServerApplicationConfig {
 			JsonObject json = content.build();
 			for(Session session : activeSessions){
 				try{
-			    	String cmsg = "player,*,"+json.toString();
-			    	System.out.println("ROOM(CE): sending to session "+session.getId()+" message:"+cmsg);
-			    	
-			    	session.getBasicRemote().sendText(cmsg);
+					String cmsg = "player,*,"+json.toString();
+					System.out.println("ROOM(CE): sending to session "+session.getId()+" message:"+cmsg);
+
+					session.getBasicRemote().sendText(cmsg);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
 			}
 		}
+		@Override
 		public void locationEvent(String senderId, String roomName, String roomDescription, Map<String,String> exits, List<String>objects, List<String>inventory){
 			JsonObjectBuilder content = Json.createObjectBuilder();
 			content.add("type", "location");
 			content.add("name", roomName);
 			content.add("description", roomDescription);
-			
+
 			JsonObjectBuilder exitJson = Json.createObjectBuilder();
 			for( Entry<String, String> e : exits.entrySet()){
 				exitJson.add(e.getKey(),e.getValue());
-			}	
+			}
 			content.add("exits", exitJson.build());
 			JsonArrayBuilder inv = Json.createArrayBuilder();
 			for(String i : inventory){
@@ -158,18 +161,43 @@ public class LifecycleManager implements ServerApplicationConfig {
 			}
 			content.add("objects", objs.build());
 			content.add("bookmark", counter.incrementAndGet());
-			
+
 			JsonObject json = content.build();
 			for(Session session : activeSessions){
 				try{
-			    	String lmsg = "player,"+senderId+","+json.toString();
-			    	System.out.println("ROOM(LE): sending to session "+session.getId()+" message:"+lmsg);			    	
-			    	session.getBasicRemote().sendText(lmsg);
+					String lmsg = "player,"+senderId+","+json.toString();
+					System.out.println("ROOM(LE): sending to session "+session.getId()+" message:"+lmsg);
+					session.getBasicRemote().sendText(lmsg);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
 			}
 		}
+		@Override
+		public void listExitsEvent(String senderId, Map<String,String> exits) {
+
+			JsonObjectBuilder exitMap = Json.createObjectBuilder();
+			for(Entry<String, String> entry : exits.entrySet()) {
+				exitMap.add(entry.getKey(), entry.getValue());
+			}
+
+			JsonObjectBuilder content = Json.createObjectBuilder();
+			content.add(Constants.TYPE, Constants.EXITS);
+			content.add(Constants.CONTENT, exitMap.build());
+
+			String lmsg = "player,"+senderId+","+content.build().toString();
+			for(Session session : activeSessions ) {
+				if ( session.isOpen() ) {
+					try{
+						System.out.println("ROOM(LEE): sending to session "+session.getId()+" message:"+lmsg);
+						session.getBasicRemote().sendText(lmsg);
+					}catch(IOException io){
+						throw new RuntimeException(io);
+					}
+				}
+			}
+		}
+		@Override
 		public void exitEvent(String senderId, String message, String exitID){
 			JsonObjectBuilder content = Json.createObjectBuilder();
 			content.add("type", "exit");
@@ -179,15 +207,15 @@ public class LifecycleManager implements ServerApplicationConfig {
 			JsonObject json = content.build();
 			for(Session session : activeSessions){
 				try{
-			    	String emsg = "playerLocation,"+senderId+","+json.toString();
-			    	System.out.println("ROOM(EE): sending to session "+session.getId()+" message:"+emsg);			    	
-			    	session.getBasicRemote().sendText(emsg);
+					String emsg = "playerLocation,"+senderId+","+json.toString();
+					System.out.println("ROOM(EE): sending to session "+session.getId()+" message:"+emsg);
+					session.getBasicRemote().sendText(emsg);
 				}catch(IOException io){
 					throw new RuntimeException(io);
 				}
 			}
 		}
-		
+
 		Collection<Session> activeSessions = new HashSet<Session>();
 		public void addSession(Session s){
 			activeSessions.add(s);
@@ -196,7 +224,7 @@ public class LifecycleManager implements ServerApplicationConfig {
 			activeSessions.remove(s);
 		}
 	}
-	
+
 	private void getConfig() throws ServletException {
 		conciergeLocation = System.getProperty(ENV_CONCIERGE_SVC, System.getenv(ENV_CONCIERGE_SVC));
 		if(conciergeLocation == null) {
@@ -226,7 +254,7 @@ public class LifecycleManager implements ServerApplicationConfig {
 			return (T)r;
 		}
 	}
-	
+
 	private Set<ServerEndpointConfig> registerRooms(Collection<Room> rooms) {
 		Client client = ClientBuilder.newClient();
 		
@@ -239,8 +267,8 @@ public class LifecycleManager implements ServerApplicationConfig {
 		for(Room room : rooms) {
 			System.out.println("Registering room " + room.getRoomName());
 			Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
-			
-			net.wasdev.gameon.room.common.Room commonRoom=new net.wasdev.gameon.room.common.Room(room.getRoomId());			
+
+			net.wasdev.gameon.room.common.Room commonRoom=new net.wasdev.gameon.room.common.Room(room.getRoomId());
 			String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
 			if(endPoint == null) {
 				throw new RuntimeException("The location for the room service cold not be "
@@ -259,20 +287,20 @@ public class LifecycleManager implements ServerApplicationConfig {
 				}
 			}
 			commonRoom.setExits(exits);
-			
+
 			SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
 			ServerEndpointConfig.Configurator config = new RoomWSConfig(room,srrp);
-			
+
 			endpoints.add(ServerEndpointConfig.Builder
-            .create(RoomWS.class, "/ws/"+room.getRoomId())
-            .configurator(config)
-            .build());
-		       			
+					.create(RoomWS.class, "/ws/"+room.getRoomId())
+					.configurator(config)
+					.build());
+
 			Response response = builder.post(Entity.json(commonRoom));
 			try {
 				if(Status.OK.getStatusCode()== response.getStatus()) {
 					String resp = response.readEntity(String.class);
-					System.out.println("Registration returned " + resp);									
+					System.out.println("Registration returned " + resp);
 				} else {
 					System.out.println("Error registering room provider : " + room.getRoomName() + " : status code " + response.getStatus());
 				}
@@ -294,12 +322,12 @@ public class LifecycleManager implements ServerApplicationConfig {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		  
-    }
+
+	}
 
 	@Override
 	public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> scanned) {
 		return null;
 	}
-	
+
 }
