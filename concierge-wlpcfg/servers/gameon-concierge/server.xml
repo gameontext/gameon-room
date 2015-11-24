@@ -13,6 +13,11 @@
     <httpEndpoint host="*" httpPort="9081" httpsPort="9444" id="defaultHttpEndpoint"/>
 
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
+    
+    <!-- This one will become db based per room provider -->
+    <jndiEntry jndiName="registrationSecret" value="${env.REGISTRATION_SECRET}"/>
+    <!-- This one is a fixed shared key between concierge and it's consumers -->
+    <jndiEntry jndiName="querySecret" value="${env.QUERY_SECRET}"/>
 
     <!-- This is required to prevent the web apps from being lazily loaded -->
     <webContainer deferServletLoad="false"/>
