@@ -50,7 +50,8 @@ task createNewContainer(type: DockerCreateContainer) {
 	env = ["LICENSE=accept", 
 			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
 			"service_room=" + System.getenv('SERVICE_ROOM'),
-			"LOGGING_DOCKER_HOST=" + System.getenv('LOGGING_DOCKER_HOST')]
+			"LOGGING_DOCKER_HOST=" + System.getenv('LOGGING_DOCKER_HOST'),
+			"REGISTRATION_SECRET=" + System.getenv('REGISTRATION_SECRET')]
 }
 
 task startNewContainer(type: DockerStartContainer) {
