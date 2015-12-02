@@ -20,6 +20,7 @@ if (dockerHost.indexOf('tcp') == 0)
 def determinedEnvironment = ["LICENSE=accept", 
 			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
 			"service_room=" + System.getenv('SERVICE_ROOM'),
+			"ADMIN_PASSWORD=" + System.getenv('ADMIN_PASSWORD'),
 			"REGISTRATION_SECRET=" + System.getenv('REGISTRATION_SECRET')]
 
 if (null != System.getenv("LOGGING_DOCKER_HOST"))
