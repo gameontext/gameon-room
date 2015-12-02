@@ -31,4 +31,5 @@ cd ../room-wlpcfg
 ../gradlew removeCurrentContainer
 ../gradlew startNewContainer
 
+cd ..
 rm -rf dockercfg
