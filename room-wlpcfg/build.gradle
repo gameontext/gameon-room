@@ -4,7 +4,7 @@ buildscript {
 	repositories {
 	    mavenCentral()
 	}
-	
+
 	dependencies {
 		classpath 'com.bmuschko:gradle-docker-plugin:2.6'
 	}
@@ -21,7 +21,12 @@ if (null != System.getenv("DOCKER_HOST"))
 	}
 }
 
-def determinedEnvironment = ["LICENSE=accept", 
+def dockerCertPath = ""
+if (null != System.getenv('DOCKER_CERT_PATH')){
+	dockerCertPath = System.getenv('DOCKER_CERT_PATH')
+}
+
+def determinedEnvironment = ["LICENSE=accept",
 			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
 			"service_room=" + System.getenv('SERVICE_ROOM'),
 			"ADMIN_PASSWORD=" + System.getenv('ADMIN_PASSWORD'),
@@ -40,14 +45,17 @@ task copyTask(type: Copy) {
     rename("room-app-1.0.war", "room-app.war")
 }
 
+task build(dependsOn: ['copyTask']){
+}
+
 apply plugin: 'com.bmuschko.docker-remote-api'
 
 import com.bmuschko.gradle.docker.tasks.container.*
 import com.bmuschko.gradle.docker.tasks.image.*
 
 docker {
-    url = dockerHost
-    certPath = new File(System.getenv("DOCKER_CERT_PATH"))
+	  url = dockerHost
+    certPath = new File(dockerCertPath)
 }
 
 task buildDockerImage(type: DockerBuildImage, dependsOn: 'copyTask') {
@@ -76,4 +84,3 @@ task startNewContainer(type: DockerStartContainer) {
 	dependsOn createNewContainer
 	targetContainerId { "gameon-room" }
 }
-
