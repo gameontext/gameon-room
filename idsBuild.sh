@@ -17,15 +17,9 @@ cd ..
 	 
 echo Building projects using gradle...
 ./gradlew build
-echo Building and Starting Concierge Docker Image...
-cd concierge-wlpcfg
-../gradlew buildDockerImage
-../gradlew stopCurrentContainer
-../gradlew removeCurrentContainer
-../gradlew startNewContainer
 
 echo Building and Starting Room Docker Image...
-cd ../room-wlpcfg
+cd room-wlpcfg
 ../gradlew buildDockerImage
 ../gradlew stopCurrentContainer
 ../gradlew removeCurrentContainer
