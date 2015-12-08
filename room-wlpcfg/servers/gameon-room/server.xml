@@ -23,7 +23,5 @@
 	<!-- This is required to prevent the web apps from being lazily loaded -->
 	<webContainer deferServletLoad="false"/>
 
-    <applicationMonitor updateTrigger="mbean"/>
-
     <webApplication id="room-app" location="room-app.war" name="room-app"/>
 </server>
