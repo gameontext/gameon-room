@@ -17,18 +17,17 @@ package net.wasdev.gameon.room.common;
 
 public class RegistrationResponse {
 
-	
-	private String response = "OK";
-	
-	public RegistrationResponse() {
-	}
+    private String response = "OK";
 
-	public String getResponse() {
-		return response;
-	}
+    public RegistrationResponse() {
+    }
 
-	public void setResponse(String response) {
-		this.response = response;
-	}
+    public String getResponse() {
+        return response;
+    }
+
+    public void setResponse(String response) {
+        this.response = response;
+    }
 
 }

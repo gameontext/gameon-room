@@ -24,84 +24,86 @@ import java.util.UUID;
 
 public class Room {
 
-	private UUID assignedID = UUID.randomUUID();		//default to a random UUID
-	private String roomName;
-	private final List<Exit> exits = new ArrayList<Exit>();
-	private final Map<String, String> attribs = new HashMap<String, String>();	
-	
-	public Room() {
-		//no-args constructor to allow JSON serialisation
-	}
-	
-	public Room(String roomName) {
-		super();
-		setRoomName(roomName);
-	}
-	
-	public String getRoomName() {
-		return roomName;
-	}
-	public void setRoomName(String roomName) {
-		this.roomName = roomName;
-	}
-	
-	public String getAttribute(String name) {
-		return attribs.get(name);
-	}
-	public void setAttribute(String name, String value) {
-		attribs.put(name, value);
-	}
-	
-	public Map<String, String> getAttributes() {
-		return attribs;
-	}
-	
-	public List<Exit> getExits() {
-		return exits;
-	}
-	public UUID getAssignedID() {
-		return assignedID;
-	}
-	
-	public void setAssignedID(UUID assignedID) {
-		this.assignedID = assignedID;
-	}
-	
-	/*
-	 * Takes a copy of the exits. Subsequent changes in the supplied list will
-	 * not be reflected.
-	 */
-	public void setExits(List<Exit> exits) {
-		this.exits.clear();
-		this.exits.addAll(exits);
-	}
-	
-	public void addExit(Exit exit) {
-		exits.add(exit);
-	}
+    private UUID assignedID = UUID.randomUUID(); // default to a random UUID
+    private String roomName;
+    private final List<Exit> exits = new ArrayList<Exit>();
+    private final Map<String, String> attribs = new HashMap<String, String>();
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Room : ");
-		builder.append(roomName);
-		builder.append('\n');
-		builder.append("Attributes : \n");
-		for(Entry<String, String> attrib : attribs.entrySet()) {
-			builder.append('\t');
-			builder.append(attrib.getKey());
-			builder.append(" : ");
-			builder.append(attrib.getValue());
-			builder.append('\n');
-		}
-		builder.append("Exits : \n");
-		for(Exit exit : exits) {
-			builder.append('\t');
-			builder.append(exit.toString());
-			builder.append('\n');
-		}
-		return builder.toString();
-	}
-	
-	
+    public Room() {
+        // no-args constructor to allow JSON serialisation
+    }
+
+    public Room(String roomName) {
+        super();
+        setRoomName(roomName);
+    }
+
+    public String getRoomName() {
+        return roomName;
+    }
+
+    public void setRoomName(String roomName) {
+        this.roomName = roomName;
+    }
+
+    public String getAttribute(String name) {
+        return attribs.get(name);
+    }
+
+    public void setAttribute(String name, String value) {
+        attribs.put(name, value);
+    }
+
+    public Map<String, String> getAttributes() {
+        return attribs;
+    }
+
+    public List<Exit> getExits() {
+        return exits;
+    }
+
+    public UUID getAssignedID() {
+        return assignedID;
+    }
+
+    public void setAssignedID(UUID assignedID) {
+        this.assignedID = assignedID;
+    }
+
+    /*
+     * Takes a copy of the exits. Subsequent changes in the supplied list will
+     * not be reflected.
+     */
+    public void setExits(List<Exit> exits) {
+        this.exits.clear();
+        this.exits.addAll(exits);
+    }
+
+    public void addExit(Exit exit) {
+        exits.add(exit);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Room : ");
+        builder.append(roomName);
+        builder.append('\n');
+        builder.append("Attributes : \n");
+        for (Entry<String, String> attrib : attribs.entrySet()) {
+            builder.append('\t');
+            builder.append(attrib.getKey());
+            builder.append(" : ");
+            builder.append(attrib.getValue());
+            builder.append('\n');
+        }
+        builder.append("Exits : \n");
+        for (Exit exit : exits) {
+            builder.append('\t');
+            builder.append(exit.toString());
+            builder.append('\n');
+        }
+        return builder.toString();
+    }
+
 }
