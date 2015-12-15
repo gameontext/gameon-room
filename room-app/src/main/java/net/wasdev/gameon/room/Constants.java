@@ -16,16 +16,16 @@
 package net.wasdev.gameon.room;
 
 public interface Constants {
-	// A field enum or just free-form?
-	String USERNAME = "username";
-	String USERID = "userId";
-	String BOOKMARK = "bookmark";
-	String CONTENT = "content";
-	String LOCATION = "location";
-	String TYPE = "type";
-	String NAME = "name";
-	String DESCRIPTION = "description";
-	String EXITS = "exits";
-	String EXITID = "exitId";
-	String STATE = "state";
+    // A field enum or just free-form?
+    String USERNAME = "username";
+    String USERID = "userId";
+    String BOOKMARK = "bookmark";
+    String CONTENT = "content";
+    String LOCATION = "location";
+    String TYPE = "type";
+    String NAME = "name";
+    String DESCRIPTION = "description";
+    String EXITS = "exits";
+    String EXITID = "exitId";
+    String STATE = "state";
 }

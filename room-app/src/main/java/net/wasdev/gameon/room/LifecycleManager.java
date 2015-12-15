@@ -50,284 +50,301 @@ import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
 
 /**
- * Manages the registration of all rooms in the Engine with the concierge */
+ * Manages the registration of all rooms in the Engine with the concierge
+ */
 public class LifecycleManager implements ServerApplicationConfig {
-	private static final String ENV_CONCIERGE_SVC = "service_concierge";
-	private static final String ENV_ROOM_SVC = "service_room";
-	private String conciergeLocation = null;
-	private String registrationSecret;	
+    private static final String ENV_CONCIERGE_SVC = "service_concierge";
+    private static final String ENV_ROOM_SVC = "service_room";
+    private String conciergeLocation = null;
+    private String registrationSecret;
 
-	Engine e = Engine.getEngine();
+    Engine e = Engine.getEngine();
 
-	public static class SessionRoomResponseProcessor implements net.wasdev.gameon.room.engine.Room.RoomResponseProcessor{
-		AtomicInteger counter = new AtomicInteger(0);
+    public static class SessionRoomResponseProcessor
+            implements net.wasdev.gameon.room.engine.Room.RoomResponseProcessor {
+        AtomicInteger counter = new AtomicInteger(0);
 
-		private void generateEvent(Session session, JsonObject content, String userID, boolean selfOnly, int bookmark) throws IOException {
-			JsonObjectBuilder response = Json.createObjectBuilder();
-			response.add("type", "event");
-			response.add("content", content);
-			response.add("bookmark", bookmark);
+        private void generateEvent(Session session, JsonObject content, String userID, boolean selfOnly, int bookmark)
+                throws IOException {
+            JsonObjectBuilder response = Json.createObjectBuilder();
+            response.add("type", "event");
+            response.add("content", content);
+            response.add("bookmark", bookmark);
 
-			String msg = "player," + (selfOnly?userID:"*") + "," + response.build().toString();
-			System.out.println("ROOM(PE): sending to session "+session.getId()+" message:"+msg);
-			session.getBasicRemote().sendText(msg);
-		}
-		@Override
-		public void playerEvent(String senderId, String selfMessage, String othersMessage){
-			//System.out.println("Player message :: from("+senderId+") onlyForSelf("+String.valueOf(selfMessage)+") others("+String.valueOf(othersMessage)+")");
-			JsonObjectBuilder content = Json.createObjectBuilder();
-			boolean selfOnly=true;
-			if(othersMessage!=null && othersMessage.length()>0){
-				content.add("*", othersMessage);
-				selfOnly=false;
-			}
-			if(selfMessage!=null && selfMessage.length()>0){
-				content.add(senderId, selfMessage);
-			}
-			JsonObject json = content.build();
-			int count = counter.incrementAndGet();
-			for(Session s : activeSessions){
-				try{
-					generateEvent(s, json, senderId, selfOnly, count);
-				}catch(IOException io){
-					throw new RuntimeException(io);
-				}
-			}
-		}
-		private void generateRoomEvent(Session session, JsonObject content, int bookmark) throws IOException {
-			JsonObjectBuilder response = Json.createObjectBuilder();
-			response.add("type", "event");
-			response.add("content", content);
-			response.add("bookmark", bookmark);
+            String msg = "player," + (selfOnly ? userID : "*") + "," + response.build().toString();
+            System.out.println("ROOM(PE): sending to session " + session.getId() + " message:" + msg);
+            session.getBasicRemote().sendText(msg);
+        }
 
-			String msg = "player,*," + response.build().toString();
-			System.out.println("ROOM(RE): sending to session "+session.getId()+" message:"+msg);
+        @Override
+        public void playerEvent(String senderId, String selfMessage, String othersMessage) {
+            // System.out.println("Player message :: from("+senderId+")
+            // onlyForSelf("+String.valueOf(selfMessage)+")
+            // others("+String.valueOf(othersMessage)+")");
+            JsonObjectBuilder content = Json.createObjectBuilder();
+            boolean selfOnly = true;
+            if (othersMessage != null && othersMessage.length() > 0) {
+                content.add("*", othersMessage);
+                selfOnly = false;
+            }
+            if (selfMessage != null && selfMessage.length() > 0) {
+                content.add(senderId, selfMessage);
+            }
+            JsonObject json = content.build();
+            int count = counter.incrementAndGet();
+            for (Session s : activeSessions) {
+                try {
+                    generateEvent(s, json, senderId, selfOnly, count);
+                } catch (IOException io) {
+                    throw new RuntimeException(io);
+                }
+            }
+        }
 
-			session.getBasicRemote().sendText(msg);
-		}
-		@Override
-		public void roomEvent(String s){
-			//System.out.println("Message sent to everyone :: "+s);
-			JsonObjectBuilder content = Json.createObjectBuilder();
-			content.add("*", s);
-			JsonObject json = content.build();
-			int count = counter.incrementAndGet();
-			for(Session session : activeSessions){
-				try{
-					generateRoomEvent(session, json, count);
-				}catch(IOException io){
-					throw new RuntimeException(io);
-				}
-			}
-		}
-		public void chatEvent(String username, String msg){
-			JsonObjectBuilder content = Json.createObjectBuilder();
-			content.add("type", "chat");
-			content.add("username", username);
-			content.add("content", msg);
-			content.add("bookmark", counter.incrementAndGet());
-			JsonObject json = content.build();
-			for(Session session : activeSessions){
-				try{
-					String cmsg = "player,*,"+json.toString();
-					System.out.println("ROOM(CE): sending to session "+session.getId()+" message:"+cmsg);
+        private void generateRoomEvent(Session session, JsonObject content, int bookmark) throws IOException {
+            JsonObjectBuilder response = Json.createObjectBuilder();
+            response.add("type", "event");
+            response.add("content", content);
+            response.add("bookmark", bookmark);
 
-					session.getBasicRemote().sendText(cmsg);
-				}catch(IOException io){
-					throw new RuntimeException(io);
-				}
-			}
-		}
-		@Override
-		public void locationEvent(String senderId, String roomName, String roomDescription, Map<String,String> exits, List<String>objects, List<String>inventory){
-			JsonObjectBuilder content = Json.createObjectBuilder();
-			content.add("type", "location");
-			content.add("name", roomName);
-			content.add("description", roomDescription);
+            String msg = "player,*," + response.build().toString();
+            System.out.println("ROOM(RE): sending to session " + session.getId() + " message:" + msg);
 
-			JsonObjectBuilder exitJson = Json.createObjectBuilder();
-			for( Entry<String, String> e : exits.entrySet()){
-				exitJson.add(e.getKey(),e.getValue());
-			}
-			content.add("exits", exitJson.build());
-			JsonArrayBuilder inv = Json.createArrayBuilder();
-			for(String i : inventory){
-				inv.add(i);
-			}
-			content.add("pockets", inv.build());
-			JsonArrayBuilder objs = Json.createArrayBuilder();
-			for(String o : objects){
-				objs.add(o);
-			}
-			content.add("objects", objs.build());
-			content.add("bookmark", counter.incrementAndGet());
+            session.getBasicRemote().sendText(msg);
+        }
 
-			JsonObject json = content.build();
-			for(Session session : activeSessions){
-				try{
-					String lmsg = "player,"+senderId+","+json.toString();
-					System.out.println("ROOM(LE): sending to session "+session.getId()+" message:"+lmsg);
-					session.getBasicRemote().sendText(lmsg);
-				}catch(IOException io){
-					throw new RuntimeException(io);
-				}
-			}
-		}
-		@Override
-		public void listExitsEvent(String senderId, Map<String,String> exits) {
+        @Override
+        public void roomEvent(String s) {
+            // System.out.println("Message sent to everyone :: "+s);
+            JsonObjectBuilder content = Json.createObjectBuilder();
+            content.add("*", s);
+            JsonObject json = content.build();
+            int count = counter.incrementAndGet();
+            for (Session session : activeSessions) {
+                try {
+                    generateRoomEvent(session, json, count);
+                } catch (IOException io) {
+                    throw new RuntimeException(io);
+                }
+            }
+        }
 
-			JsonObjectBuilder exitMap = Json.createObjectBuilder();
-			for(Entry<String, String> entry : exits.entrySet()) {
-				exitMap.add(entry.getKey(), entry.getValue());
-			}
+        public void chatEvent(String username, String msg) {
+            JsonObjectBuilder content = Json.createObjectBuilder();
+            content.add("type", "chat");
+            content.add("username", username);
+            content.add("content", msg);
+            content.add("bookmark", counter.incrementAndGet());
+            JsonObject json = content.build();
+            for (Session session : activeSessions) {
+                try {
+                    String cmsg = "player,*," + json.toString();
+                    System.out.println("ROOM(CE): sending to session " + session.getId() + " message:" + cmsg);
 
-			JsonObjectBuilder content = Json.createObjectBuilder();
-			content.add(Constants.TYPE, Constants.EXITS);
-			content.add(Constants.CONTENT, exitMap.build());
+                    session.getBasicRemote().sendText(cmsg);
+                } catch (IOException io) {
+                    throw new RuntimeException(io);
+                }
+            }
+        }
 
-			String lmsg = "player,"+senderId+","+content.build().toString();
-			for(Session session : activeSessions ) {
-				if ( session.isOpen() ) {
-					try{
-						System.out.println("ROOM(LEE): sending to session "+session.getId()+" message:"+lmsg);
-						session.getBasicRemote().sendText(lmsg);
-					}catch(IOException io){
-						throw new RuntimeException(io);
-					}
-				}
-			}
-		}
-		@Override
-		public void exitEvent(String senderId, String message, String exitID){
-			JsonObjectBuilder content = Json.createObjectBuilder();
-			content.add("type", "exit");
-			content.add("exitId", exitID);
-			content.add("content", message);
-			content.add("bookmark", counter.incrementAndGet());
-			JsonObject json = content.build();
-			for(Session session : activeSessions){
-				try{
-					String emsg = "playerLocation,"+senderId+","+json.toString();
-					System.out.println("ROOM(EE): sending to session "+session.getId()+" message:"+emsg);
-					session.getBasicRemote().sendText(emsg);
-				}catch(IOException io){
-					throw new RuntimeException(io);
-				}
-			}
-		}
+        @Override
+        public void locationEvent(String senderId, String roomName, String roomDescription, Map<String, String> exits,
+                List<String> objects, List<String> inventory) {
+            JsonObjectBuilder content = Json.createObjectBuilder();
+            content.add("type", "location");
+            content.add("name", roomName);
+            content.add("description", roomDescription);
 
-		Collection<Session> activeSessions = new HashSet<Session>();
-		public void addSession(Session s){
-			activeSessions.add(s);
-		}
-		public void removeSession(Session s){
-			activeSessions.remove(s);
-		}
-	}
+            JsonObjectBuilder exitJson = Json.createObjectBuilder();
+            for (Entry<String, String> e : exits.entrySet()) {
+                exitJson.add(e.getKey(), e.getValue());
+            }
+            content.add("exits", exitJson.build());
+            JsonArrayBuilder inv = Json.createArrayBuilder();
+            for (String i : inventory) {
+                inv.add(i);
+            }
+            content.add("pockets", inv.build());
+            JsonArrayBuilder objs = Json.createArrayBuilder();
+            for (String o : objects) {
+                objs.add(o);
+            }
+            content.add("objects", objs.build());
+            content.add("bookmark", counter.incrementAndGet());
 
-	private void getConfig() throws ServletException {
-		conciergeLocation = System.getProperty(ENV_CONCIERGE_SVC, System.getenv(ENV_CONCIERGE_SVC));
-		if(conciergeLocation == null) {
-			throw new ServletException("The location for the concierge service cold not be "
-					+ "found in a system property or environment variable named : " + ENV_CONCIERGE_SVC);
-		}
-		try{
-			registrationSecret = (String) new InitialContext().lookup("registrationSecret");		
-		}catch(NamingException e){}
-		if(registrationSecret==null){
-			throw new ServletException("registrationSecret was not found, check server.xml/server.env");
-		}
-	}
+            JsonObject json = content.build();
+            for (Session session : activeSessions) {
+                try {
+                    String lmsg = "player," + senderId + "," + json.toString();
+                    System.out.println("ROOM(LE): sending to session " + session.getId() + " message:" + lmsg);
+                    session.getBasicRemote().sendText(lmsg);
+                } catch (IOException io) {
+                    throw new RuntimeException(io);
+                }
+            }
+        }
 
-	private static class RoomWSConfig extends ServerEndpointConfig.Configurator {
-		private final Room room;
-		private final SessionRoomResponseProcessor srrp;
-		public RoomWSConfig(Room room, SessionRoomResponseProcessor srrp ){
-			this.room=room;
-			this.srrp=srrp;
-			this.room.setRoomResponseProcessor(srrp);
-		}
-		@SuppressWarnings("unchecked")
-		@Override
-		public <T> T getEndpointInstance(Class<T> endpointClass){
-			RoomWS r = new RoomWS(this.room,this.srrp);
-			return (T)r;
-		}
-	}
+        @Override
+        public void listExitsEvent(String senderId, Map<String, String> exits) {
 
-	private Set<ServerEndpointConfig> registerRooms(Collection<Room> rooms) {
-		Client client = ClientBuilder.newClient();
-		
-		//add the apikey handler for the registration request.
-		ApiKey apikey = new ApiKey("roomRegistration",registrationSecret);		
-		client.register(apikey);
-		
-		WebTarget target = client.target(conciergeLocation);
-		Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
-		for(Room room : rooms) {
-			System.out.println("Registering room " + room.getRoomName());
-			Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
+            JsonObjectBuilder exitMap = Json.createObjectBuilder();
+            for (Entry<String, String> entry : exits.entrySet()) {
+                exitMap.add(entry.getKey(), entry.getValue());
+            }
 
-			net.wasdev.gameon.room.common.Room commonRoom=new net.wasdev.gameon.room.common.Room(room.getRoomId());
-			String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
-			if(endPoint == null) {
-				throw new RuntimeException("The location for the room service cold not be "
-						+ "found in a system property or environment variable named : " + ENV_ROOM_SVC);
-			}
-			commonRoom.setAttribute("endPoint", endPoint + "/ws/"+room.getRoomId());
-			commonRoom.setAttribute("startLocation", ""+room.isStarterLocation());
-			List<net.wasdev.gameon.room.common.Exit> exits = new ArrayList<net.wasdev.gameon.room.common.Exit>();
-			for(ExitDesc ed : room.getExits()){
-				if(ed.handler.isVisible()){
-					net.wasdev.gameon.room.common.Exit e = new net.wasdev.gameon.room.common.Exit();
-					e.setName(ed.direction.toString());
-					e.setDescription(ed.handler.getDescription(null, ed, room));
-					e.setRoom(ed.targetRoomId);
-					exits.add(e);
-				}
-			}
-			commonRoom.setExits(exits);
+            JsonObjectBuilder content = Json.createObjectBuilder();
+            content.add(Constants.TYPE, Constants.EXITS);
+            content.add(Constants.CONTENT, exitMap.build());
 
-			SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
-			ServerEndpointConfig.Configurator config = new RoomWSConfig(room,srrp);
+            String lmsg = "player," + senderId + "," + content.build().toString();
+            for (Session session : activeSessions) {
+                if (session.isOpen()) {
+                    try {
+                        System.out.println("ROOM(LEE): sending to session " + session.getId() + " message:" + lmsg);
+                        session.getBasicRemote().sendText(lmsg);
+                    } catch (IOException io) {
+                        throw new RuntimeException(io);
+                    }
+                }
+            }
+        }
 
-			endpoints.add(ServerEndpointConfig.Builder
-					.create(RoomWS.class, "/ws/"+room.getRoomId())
-					.configurator(config)
-					.build());
+        @Override
+        public void exitEvent(String senderId, String message, String exitID) {
+            JsonObjectBuilder content = Json.createObjectBuilder();
+            content.add("type", "exit");
+            content.add("exitId", exitID);
+            content.add("content", message);
+            content.add("bookmark", counter.incrementAndGet());
+            JsonObject json = content.build();
+            for (Session session : activeSessions) {
+                try {
+                    String emsg = "playerLocation," + senderId + "," + json.toString();
+                    System.out.println("ROOM(EE): sending to session " + session.getId() + " message:" + emsg);
+                    session.getBasicRemote().sendText(emsg);
+                } catch (IOException io) {
+                    throw new RuntimeException(io);
+                }
+            }
+        }
 
-			Response response = builder.post(Entity.json(commonRoom));
-			try {
-				if(Status.OK.getStatusCode()== response.getStatus()) {
-					String resp = response.readEntity(String.class);
-					System.out.println("Registration returned " + resp);
-				} else {
-					System.out.println("Error registering room provider : " + room.getRoomName() + " : status code " + response.getStatus());
-				}
-			} finally {
-				response.close();
-			}
+        Collection<Session> activeSessions = new HashSet<Session>();
 
-		}
-		return endpoints;
-	}
+        public void addSession(Session s) {
+            activeSessions.add(s);
+        }
 
-	@Override
-	public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpointClasses) {
-		try{
-			getConfig();
-			return registerRooms(e.getRooms());
-		}catch(ServletException e){
-			System.err.println("Error building endpoint configs for ro");
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
+        public void removeSession(Session s) {
+            activeSessions.remove(s);
+        }
+    }
 
-	}
+    private void getConfig() throws ServletException {
+        conciergeLocation = System.getProperty(ENV_CONCIERGE_SVC, System.getenv(ENV_CONCIERGE_SVC));
+        if (conciergeLocation == null) {
+            throw new ServletException("The location for the concierge service cold not be "
+                    + "found in a system property or environment variable named : " + ENV_CONCIERGE_SVC);
+        }
+        try {
+            registrationSecret = (String) new InitialContext().lookup("registrationSecret");
+        } catch (NamingException e) {
+        }
+        if (registrationSecret == null) {
+            throw new ServletException("registrationSecret was not found, check server.xml/server.env");
+        }
+    }
 
-	@Override
-	public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> scanned) {
-		return null;
-	}
+    private static class RoomWSConfig extends ServerEndpointConfig.Configurator {
+        private final Room room;
+        private final SessionRoomResponseProcessor srrp;
+
+        public RoomWSConfig(Room room, SessionRoomResponseProcessor srrp) {
+            this.room = room;
+            this.srrp = srrp;
+            this.room.setRoomResponseProcessor(srrp);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T getEndpointInstance(Class<T> endpointClass) {
+            RoomWS r = new RoomWS(this.room, this.srrp);
+            return (T) r;
+        }
+    }
+
+    private Set<ServerEndpointConfig> registerRooms(Collection<Room> rooms) {
+        Client client = ClientBuilder.newClient();
+
+        // add the apikey handler for the registration request.
+        ApiKey apikey = new ApiKey("roomRegistration", registrationSecret);
+        client.register(apikey);
+
+        WebTarget target = client.target(conciergeLocation);
+        Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
+        for (Room room : rooms) {
+            System.out.println("Registering room " + room.getRoomName());
+            Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
+
+            net.wasdev.gameon.room.common.Room commonRoom = new net.wasdev.gameon.room.common.Room(room.getRoomId());
+            String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
+            if (endPoint == null) {
+                throw new RuntimeException("The location for the room service cold not be "
+                        + "found in a system property or environment variable named : " + ENV_ROOM_SVC);
+            }
+            commonRoom.setAttribute("endPoint", endPoint + "/ws/" + room.getRoomId());
+            commonRoom.setAttribute("startLocation", "" + room.isStarterLocation());
+            List<net.wasdev.gameon.room.common.Exit> exits = new ArrayList<net.wasdev.gameon.room.common.Exit>();
+            for (ExitDesc ed : room.getExits()) {
+                if (ed.handler.isVisible()) {
+                    net.wasdev.gameon.room.common.Exit e = new net.wasdev.gameon.room.common.Exit();
+                    e.setName(ed.direction.toString());
+                    e.setDescription(ed.handler.getDescription(null, ed, room));
+                    e.setRoom(ed.targetRoomId);
+                    exits.add(e);
+                }
+            }
+            commonRoom.setExits(exits);
+
+            SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
+            ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp);
+
+            endpoints.add(ServerEndpointConfig.Builder.create(RoomWS.class, "/ws/" + room.getRoomId())
+                    .configurator(config).build());
+
+            Response response = builder.post(Entity.json(commonRoom));
+            try {
+                if (Status.OK.getStatusCode() == response.getStatus()) {
+                    String resp = response.readEntity(String.class);
+                    System.out.println("Registration returned " + resp);
+                } else {
+                    System.out.println("Error registering room provider : " + room.getRoomName() + " : status code "
+                            + response.getStatus());
+                }
+            } finally {
+                response.close();
+            }
+
+        }
+        return endpoints;
+    }
+
+    @Override
+    public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpointClasses) {
+        try {
+            getConfig();
+            return registerRooms(e.getRooms());
+        } catch (ServletException e) {
+            System.err.println("Error building endpoint configs for ro");
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> scanned) {
+        return null;
+    }
 
 }
