@@ -23,8 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Resource;
+import javax.enterprise.concurrent.ManagedScheduledExecutorService;
+import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
@@ -52,12 +56,13 @@ import net.wasdev.gameon.room.engine.meta.ExitDesc;
 /**
  * Manages the registration of all rooms in the Engine with the concierge
  */
+@ApplicationScoped
 public class LifecycleManager implements ServerApplicationConfig {
     private static final String ENV_CONCIERGE_SVC = "service_concierge";
     private static final String ENV_ROOM_SVC = "service_room";
     private String conciergeLocation = null;
     private String registrationSecret;
-
+    
     Engine e = Engine.getEngine();
 
     public static class SessionRoomResponseProcessor
@@ -239,6 +244,75 @@ public class LifecycleManager implements ServerApplicationConfig {
             activeSessions.remove(s);
         }
     }
+    
+    /*
+     * This is temporary.. the concierge is being rebuilt, but until then we 
+     * need to handle if it restarts before us.. so we'll just 
+     */
+    private class ReRegisterRoomsForeverThread implements Runnable {
+    	private Collection<Room> rooms;
+    	private String registrationSecret;
+    	
+    	public ReRegisterRoomsForeverThread(Collection<Room> rooms, String registrationSecret) {
+    		this.rooms = rooms;
+    		this.registrationSecret = registrationSecret;
+		}
+    	
+		@Override
+		public void run() {
+			try{
+		        Client client = ClientBuilder.newClient();
+
+		        // add the apikey handler for the registration request.
+		        ApiKey apikey = new ApiKey("roomRegistration", registrationSecret);
+		        client.register(apikey);
+
+		        WebTarget target = client.target(conciergeLocation);    
+			    
+    	        for (Room room : rooms) {
+    	            Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
+    
+    	            net.wasdev.gameon.room.common.Room commonRoom = new net.wasdev.gameon.room.common.Room(room.getRoomId());
+    	            String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
+    	            if (endPoint == null) {
+    	                throw new RuntimeException("The location for the room service cold not be "
+    	                        + "found in a system property or environment variable named : " + ENV_ROOM_SVC);
+    	            }
+    	            commonRoom.setAttribute("endPoint", endPoint + "/ws/" + room.getRoomId());
+    	            commonRoom.setAttribute("startLocation", "" + room.isStarterLocation());
+    	            List<net.wasdev.gameon.room.common.Exit> exits = new ArrayList<net.wasdev.gameon.room.common.Exit>();
+    	            for (ExitDesc ed : room.getExits()) {
+    	                if (ed.handler.isVisible()) {
+    	                    net.wasdev.gameon.room.common.Exit e = new net.wasdev.gameon.room.common.Exit();
+    	                    e.setName(ed.direction.toString());
+    	                    e.setDescription(ed.handler.getDescription(null, ed, room));
+    	                    e.setRoom(ed.targetRoomId);
+    	                    exits.add(e);
+    	                }
+    	            }
+    	            commonRoom.setExits(exits);	 
+    	            
+    	            Response response = builder.post(Entity.json(commonRoom));
+    	            try {
+    	                if (Status.OK.getStatusCode() == response.getStatus()) {
+    	                    //all is well, we don't log each room to avoid spam.
+    	                } else {
+    	                    System.out.println("Error re-registering room provider : " + room.getRoomName() + " : status code "
+    	                            + response.getStatus());
+    	                }
+    	            } finally {
+    	                response.close();
+    	            }
+    	        }
+    	        System.out.println("ReRegistration complete.");
+			}catch(Exception e){
+			    System.out.println("Reregister thread caught "+e.getMessage());
+			    e.printStackTrace();
+			    //by rethrowing here, the scheduled executor will shut us down. 
+			    throw e;
+			}
+		}    	
+    }
 
     private void getConfig() throws ServletException {
         conciergeLocation = System.getProperty(ENV_CONCIERGE_SVC, System.getenv(ENV_CONCIERGE_SVC));
@@ -324,8 +398,17 @@ public class LifecycleManager implements ServerApplicationConfig {
             } finally {
                 response.close();
             }
-
         }
+        try{
+            ManagedScheduledExecutorService executor;
+            executor = (ManagedScheduledExecutorService) new InitialContext().lookup("concurrent/execSvc");         
+            ReRegisterRoomsForeverThread r = new ReRegisterRoomsForeverThread(rooms,registrationSecret);
+            executor.scheduleAtFixedRate(r, 10, 10, TimeUnit.SECONDS);
+        }catch(Exception e){
+            System.out.println("Error creating room reregistrator.. "+e.getMessage());
+            e.printStackTrace();
+        }
+        
         return endpoints;
     }
 
