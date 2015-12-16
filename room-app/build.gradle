@@ -11,6 +11,7 @@ dependencies {
     providedCompile 'javax.annotation:javax.annotation-api:1.2'
     providedCompile 'javax.inject:javax.inject:1'
     providedCompile 'javax.enterprise:cdi-api:1.2'
+    providedCompile 'javax.enterprise.concurrent:javax.enterprise.concurrent-api:1.0'
     compile 'org.mongodb:mongo-java-driver:2.12.3'
     compile project(':app-common')
 }

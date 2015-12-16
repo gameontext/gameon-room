@@ -8,6 +8,7 @@
         <feature>cdi-1.2</feature>
         <feature>jsonp-1.0</feature>
         <feature>ssl-1.0</feature>
+        <feature>concurrent-1.0</feature>
     </featureManager>
 
     <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
@@ -22,6 +23,9 @@
 	
 	<!-- This is required to prevent the web apps from being lazily loaded -->
 	<webContainer deferServletLoad="false"/>
+
+	<!-- Executor used by RoomRegistration because it can't use CDI -->
+    <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
 
     <webApplication id="room-app" location="room-app.war" name="room-app"/>
 </server>
