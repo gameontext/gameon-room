@@ -15,17 +15,19 @@
     <httpEndpoint host="*" httpPort="9080" httpsPort="9445" id="defaultHttpEndpoint"/>
 
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
-    
+
     <!-- Our key that allows us to register rooms -->
     <jndiEntry jndiName="registrationSecret" value="${env.REGISTRATION_SECRET}"/>
 
 	<logging traceSpecification="*=info"/>
-	
+
 	<!-- This is required to prevent the web apps from being lazily loaded -->
 	<webContainer deferServletLoad="false"/>
 
 	<!-- Executor used by RoomRegistration because it can't use CDI -->
     <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
+
+    <applicationMonitor dropinsEnabled="false"/>
 
     <webApplication id="room-app" location="room-app.war" name="room-app"/>
 </server>
