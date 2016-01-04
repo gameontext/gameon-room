@@ -29,7 +29,6 @@ if (null != System.getenv('DOCKER_CERT_PATH')){
 def localEnvironment = ["LICENSE=accept",
 			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
 			"service_room=" + System.getenv('SERVICE_ROOM'),
-			"ADMIN_PASSWORD=" + System.getenv('ADMIN_PASSWORD'),
 			"REGISTRATION_SECRET=" + System.getenv('REGISTRATION_SECRET')]
 
 def etcdEnvironment = ["LICENSE=accept",
