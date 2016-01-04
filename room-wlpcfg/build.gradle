@@ -26,18 +26,14 @@ if (null != System.getenv('DOCKER_CERT_PATH')){
 	dockerCertPath = System.getenv('DOCKER_CERT_PATH')
 }
 
-def determinedEnvironment = ["LICENSE=accept",
+def localEnvironment = ["LICENSE=accept",
 			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
 			"service_room=" + System.getenv('SERVICE_ROOM'),
 			"ADMIN_PASSWORD=" + System.getenv('ADMIN_PASSWORD'),
 			"REGISTRATION_SECRET=" + System.getenv('REGISTRATION_SECRET')]
 
-if (null != System.getenv("LOGSTASH_ENDPOINT"))
-{
-	determinedEnvironment << "LOGSTASH_ENDPOINT=" + System.getenv("LOGSTASH_ENDPOINT")
-	determinedEnvironment << "LOGSTASH_KEY=" + System.getenv("LOGSTASH_KEY")
-	determinedEnvironment << "LOGSTASH_CERT=" + System.getenv("LOGSTASH_CERT")
-}
+def etcdEnvironment = ["LICENSE=accept",
+							"ETCDCTL_ENDPOINT=http://etcd:4001"]
 
 task copyTask(type: Copy) {
     from '../room-app/build/libs/room-app-1.0.war'
@@ -77,7 +73,20 @@ task createNewContainer(type: DockerCreateContainer) {
 	targetImageId { "gameon-room" }
 	containerName = "gameon-room"
 	portBindings = ['9080:9080']
-	env = determinedEnvironment
+	env = localEnvironment
+}
+
+task createNewEtcdContainer(type: DockerCreateContainer) {
+	targetImageId { "gameon-room" }
+	containerName = "gameon-room"
+	portBindings = ['9080:9080']
+	links = ['etcd']
+	env = etcdEnvironment
+}
+
+task startNewEtcdContainer(type: DockerStartContainer) {
+	dependsOn createNewEtcdContainer
+	targetContainerId { "gameon-room" }
 }
 
 task startNewContainer(type: DockerStartContainer) {
