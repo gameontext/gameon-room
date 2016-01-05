@@ -1,3 +1,0 @@
-service_concierge=http://localhost:9081/concierge/registerRoom
-service_room=ws://localhost:9080/rooms
-LICENSE=accept
