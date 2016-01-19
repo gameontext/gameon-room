@@ -261,6 +261,8 @@ public class LifecycleManager implements ServerApplicationConfig {
         @Override
         public void run() {
             try{
+                System.out.println("Room registration beginning");
+                
                 Client client = ClientBuilder.newClient();
 
                 // add the apikey handler for the registration request.
