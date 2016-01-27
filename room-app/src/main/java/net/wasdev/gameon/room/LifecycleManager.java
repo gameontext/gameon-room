@@ -299,8 +299,9 @@ public class LifecycleManager implements ServerApplicationConfig {
                         if (Status.OK.getStatusCode() == response.getStatus()) {
                             //all is well, we don't log each room to avoid spam.
                         } else {
+                            String resp = response.readEntity(String.class);
                             System.out.println("Error re-registering room provider : " + room.getRoomName() + " : status code "
-                                    + response.getStatus());
+                                    + response.getStatus()+" "+resp);
                         }
                     } finally {
                         response.close();
@@ -393,8 +394,9 @@ public class LifecycleManager implements ServerApplicationConfig {
                     String resp = response.readEntity(String.class);
                     System.out.println("Registration returned " + resp);
                 } else {
+                    String resp = response.readEntity(String.class);
                     System.out.println("Error registering room provider : " + room.getRoomName() + " : status code "
-                            + response.getStatus());
+                            + response.getStatus()+"\n"+ resp);
                 }
             } finally {
                 response.close();
