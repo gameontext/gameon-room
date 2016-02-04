@@ -71,14 +71,14 @@ task removeCurrentContainer(type: DockerRemoveContainer) {
 task createNewContainer(type: DockerCreateContainer) {
 	targetImageId { "gameon-room" }
 	containerName = "gameon-room"
-	portBindings = ['9080:9080']
+	portBindings = ['9080:9080','9445:9443']
 	env = localEnvironment
 }
 
 task createNewEtcdContainer(type: DockerCreateContainer) {
 	targetImageId { "gameon-room" }
 	containerName = "gameon-room"
-	portBindings = ['9080:9080']
+	portBindings = ['9080:9080','9445:9443']
 	links = ['etcd:etcd']
 	env = etcdEnvironment
 }

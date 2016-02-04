@@ -6,11 +6,11 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   tar xzf etcd-v2.2.2-linux-amd64.tar.gz etcd-v2.2.2-linux-amd64/etcdctl --strip-components=1
   rm etcd-v2.2.2-linux-amd64.tar.gz
   mv etcdctl /usr/local/bin/etcdctl
-  
+
   export service_concierge=$(etcdctl get /concierge/service)
   export service_room=$(etcdctl get /room/service)
   export REGISTRATION_SECRET=$(etcdctl get /passwords/concierge-key)
-  
+
   /opt/ibm/wlp/bin/server start defaultServer
   echo Starting the logstash forwarder...
   sed -i s/PLACEHOLDER_LOGHOST/$(etcdctl get /logstash/endpoint)/g /opt/forwarder.conf
@@ -21,5 +21,5 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   sleep 0.5
   ./forwarder --config ./forwarder.conf
 else
-  /opt/ibm/wlp/bin/server run defaultServer
+  exec /opt/ibm/wlp/bin/server run defaultServer
 fi
