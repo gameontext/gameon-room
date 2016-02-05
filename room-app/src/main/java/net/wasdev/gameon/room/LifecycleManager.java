@@ -317,9 +317,18 @@ public class LifecycleManager implements ServerApplicationConfig {
 
             //initiate the request.
             int httpResult = con.getResponseCode();
-            if (httpResult == 204) {
+            //a 200 response means map has data for this room already
+            if (httpResult == 200) {
                 System.out.println("Skipping registration for room "+room.getRoomName()+" because it is already known to the map service");
                 continue;
+            }
+            //we expect 204 (no content) .. to say the map didn't know about the room
+            if (httpResult != 204) {
+                //if it's not s 200 or a 204.. we'll just skip registering..
+                System.out.println("Bad http response code from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
+                continue;
+            }else{
+                System.out.println("Room is unknown to Map, Registering room " + room.getRoomName());
             }
             }catch(Exception e){
                 System.out.println("Error testing registration for room, will not try to register room");
@@ -369,7 +378,7 @@ public class LifecycleManager implements ServerApplicationConfig {
 
             Response response = builder.post(Entity.json(registrationPayload.build().toString()));
             try {
-                if (Status.OK.getStatusCode() == response.getStatus()) {
+                if (Status.CREATED.getStatusCode() == response.getStatus()) {
                     String resp = response.readEntity(String.class);
                     System.out.println("Registration returned " + resp);
                 } else {
