@@ -112,7 +112,7 @@ public class LogView extends HttpServlet {
                                     if(expectedPassword!=null){
                                         out.println("Hmm.. "+expectedPassword.substring(0,3)+" "+expectedPassword.length()+"<br>");
                                     }else{
-                                        out.println("Null?<br>")
+                                        out.println("Null?<br>");
                                     }
                                 }
 
