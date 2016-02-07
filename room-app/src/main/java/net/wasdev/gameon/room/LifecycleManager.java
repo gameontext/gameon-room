@@ -61,7 +61,7 @@ import net.wasdev.gameon.room.engine.meta.ExitDesc;
 public class LifecycleManager implements ServerApplicationConfig {
     private static final String ENV_MAP_SVC = "service_map";
     private static final String ENV_ROOM_SVC = "service_room";
-    private String conciergeLocation = null;
+    private String mapLocation = null;
     private String registrationSecret;
 
     Engine e = Engine.getEngine();
@@ -247,8 +247,8 @@ public class LifecycleManager implements ServerApplicationConfig {
     }
 
     private void getConfig() throws ServletException {
-        conciergeLocation = System.getProperty(ENV_MAP_SVC, System.getenv(ENV_MAP_SVC));
-        if (conciergeLocation == null) {
+        mapLocation = System.getProperty(ENV_MAP_SVC, System.getenv(ENV_MAP_SVC));
+        if (mapLocation == null) {
             throw new ServletException("The location for the map service cold not be "
                     + "found in a system property or environment variable named : " + ENV_MAP_SVC);
         }
@@ -281,12 +281,13 @@ public class LifecycleManager implements ServerApplicationConfig {
 
     private Set<ServerEndpointConfig> registerRooms(Collection<Room> rooms) {
         Client client = ClientBuilder.newClient();
-
+        String userId = "game-on.org";
+        
         // add the apikey handler for the registration request.
-        ApiKey apikey = new ApiKey("roomRegistration", registrationSecret);
+        GameOnHeaderAuthInterceptor apikey = new GameOnHeaderAuthInterceptor(userId, registrationSecret);
         client.register(apikey);
 
-        WebTarget target = client.target(conciergeLocation);
+        WebTarget target = client.target(mapLocation);
         Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
         for (Room room : rooms) {
             
@@ -294,38 +295,36 @@ public class LifecycleManager implements ServerApplicationConfig {
         
             //test if room is already registered.     
             try{
-            String name = room.getRoomName();
-            String userId = "game-on.org";
-                       
+            String name = room.getRoomId();
+                    
             // build the apikey for the query request.
-            String queryParams = "name=" + name + "&owner=" + userId + "&id=" + userId + "&stamp="
-                    + System.currentTimeMillis();
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(registrationSecret.getBytes("UTF-8"), "HmacSHA256"));
-            String hash = javax.xml.bind.DatatypeConverter
-                    .printBase64Binary(mac.doFinal(queryParams.getBytes("UTF-8")));
+            String queryParams = "name=" + name + "&owner=" + userId;
 
             // build the complete query url..
-            System.out.println("Querying room registration using url " + conciergeLocation);
-            URL u = new URL(conciergeLocation + "?" + queryParams + "&apikey=" + hash);
+            System.out.println("Querying room registration using url " + mapLocation);
+            URL u = new URL(mapLocation + "?" + queryParams);
+            System.out.println("Total URL "+u.toExternalForm());
             HttpURLConnection con = (HttpURLConnection) u.openConnection();
             con.setDoOutput(true);
             con.setDoInput(true);
-            con.setRequestProperty("Content-Type", "application/json;");
+            //con.setRequestProperty("Content-Type", "application/json;");
             con.setRequestProperty("Accept", "application/json,text/plain");
             con.setRequestProperty("Method", "GET");
-
+            
             //initiate the request.
             int httpResult = con.getResponseCode();
             //a 200 response means map has data for this room already
             if (httpResult == 200) {
                 System.out.println("Skipping registration for room "+room.getRoomName()+" because it is already known to the map service");
+                
+                //here we should read the response, and update our /exits information.
+                
                 continue;
             }
             //we expect 204 (no content) .. to say the map didn't know about the room
             if (httpResult != 204) {
                 //if it's not s 200 or a 204.. we'll just skip registering..
-                System.out.println("Bad http response code from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
+                System.out.println("Bad http response code of "+httpResult+" from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
                 continue;
             }else{
                 System.out.println("Room is unknown to Map, Registering room " + room.getRoomName());
@@ -338,7 +337,6 @@ public class LifecycleManager implements ServerApplicationConfig {
             
             System.out.println("Registering room " + room.getRoomName());
             Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
-
 
             String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
             if (endPoint == null) {

@@ -27,9 +27,9 @@ if (null != System.getenv('DOCKER_CERT_PATH')){
 }
 
 def localEnvironment = ["LICENSE=accept",
-			"service_concierge=" + System.getenv('SERVICE_CONCIERGE'),
+			"service_map=" + System.getenv('SERVICE_MAP'),
 			"service_room=" + System.getenv('SERVICE_ROOM'),
-			"REGISTRATION_SECRET=" + System.getenv('REGISTRATION_SECRET')]
+			"MAP_KEY=" + System.getenv('MAP_KEY')]
 
 def etcdEnvironment = ["LICENSE=accept",
 							"ETCDCTL_ENDPOINT=http://etcd:4001"]
