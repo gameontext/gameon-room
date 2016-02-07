@@ -7,7 +7,7 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   rm etcd-v2.2.2-linux-amd64.tar.gz
   mv etcdctl /usr/local/bin/etcdctl
 
-  export service_concierge=$(etcdctl get /concierge/service)
+  export service_map=$(etcdctl get /map/url)
   export service_room=$(etcdctl get /room/service)
   export REGISTRATION_SECRET=$(etcdctl get /passwords/concierge-key)
 

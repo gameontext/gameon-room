@@ -16,6 +16,8 @@
 package net.wasdev.gameon.room;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -23,11 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.Resource;
-import javax.enterprise.concurrent.ManagedScheduledExecutorService;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -58,7 +59,7 @@ import net.wasdev.gameon.room.engine.meta.ExitDesc;
  */
 @ApplicationScoped
 public class LifecycleManager implements ServerApplicationConfig {
-    private static final String ENV_CONCIERGE_SVC = "service_concierge";
+    private static final String ENV_MAP_SVC = "service_map";
     private static final String ENV_ROOM_SVC = "service_room";
     private String conciergeLocation = null;
     private String registrationSecret;
@@ -245,82 +246,11 @@ public class LifecycleManager implements ServerApplicationConfig {
         }
     }
 
-    /*
-     * This is temporary.. the concierge is being rebuilt, but until then we
-     * need to handle if it restarts before us.. so we'll just
-     */
-    private class ReRegisterRoomsForeverThread implements Runnable {
-        private Collection<Room> rooms;
-        private String registrationSecret;
-
-        public ReRegisterRoomsForeverThread(Collection<Room> rooms, String registrationSecret) {
-            this.rooms = rooms;
-            this.registrationSecret = registrationSecret;
-        }
-
-        @Override
-        public void run() {
-            try{
-                System.out.println("Room registration beginning");
-                
-                Client client = ClientBuilder.newClient();
-
-                // add the apikey handler for the registration request.
-                ApiKey apikey = new ApiKey("roomRegistration", registrationSecret);
-                client.register(apikey);
-
-                WebTarget target = client.target(conciergeLocation);
-
-                for (Room room : rooms) {
-                    Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
-
-                    net.wasdev.gameon.room.common.Room commonRoom = new net.wasdev.gameon.room.common.Room(room.getRoomId());
-                    String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
-                    if (endPoint == null) {
-                        throw new RuntimeException("The location for the room service cold not be "
-                                + "found in a system property or environment variable named : " + ENV_ROOM_SVC);
-                    }
-                    commonRoom.setAttribute("endPoint", endPoint + "/ws/" + room.getRoomId());
-                    commonRoom.setAttribute("startLocation", "" + room.isStarterLocation());
-                    List<net.wasdev.gameon.room.common.Exit> exits = new ArrayList<net.wasdev.gameon.room.common.Exit>();
-                    for (ExitDesc ed : room.getExits()) {
-                        if (ed.handler.isVisible()) {
-                            net.wasdev.gameon.room.common.Exit e = new net.wasdev.gameon.room.common.Exit();
-                            e.setName(ed.direction.toString());
-                            e.setDescription(ed.handler.getDescription(null, ed, room));
-                            e.setRoom(ed.targetRoomId);
-                            exits.add(e);
-                        }
-                    }
-                    commonRoom.setExits(exits);
-
-                    Response response = builder.post(Entity.json(commonRoom));
-                    try {
-                        if (Status.OK.getStatusCode() == response.getStatus()) {
-                            //all is well, we don't log each room to avoid spam.
-                        } else {
-                            String resp = response.readEntity(String.class);
-                            System.out.println("Error re-registering room provider : " + room.getRoomName() + " : status code "
-                                    + response.getStatus()+" "+resp);
-                        }
-                    } finally {
-                        response.close();
-                    }
-                }
-            }catch(Exception e){
-                System.out.println("Reregister thread caught "+e.getMessage());
-                e.printStackTrace();
-                //by rethrowing here, the scheduled executor will shut us down.
-                throw e;
-            }
-        }
-    }
-
     private void getConfig() throws ServletException {
-        conciergeLocation = System.getProperty(ENV_CONCIERGE_SVC, System.getenv(ENV_CONCIERGE_SVC));
+        conciergeLocation = System.getProperty(ENV_MAP_SVC, System.getenv(ENV_MAP_SVC));
         if (conciergeLocation == null) {
-            throw new ServletException("The location for the concierge service cold not be "
-                    + "found in a system property or environment variable named : " + ENV_CONCIERGE_SVC);
+            throw new ServletException("The location for the map service cold not be "
+                    + "found in a system property or environment variable named : " + ENV_MAP_SVC);
         }
         try {
             registrationSecret = (String) new InitialContext().lookup("registrationSecret");
@@ -359,28 +289,86 @@ public class LifecycleManager implements ServerApplicationConfig {
         WebTarget target = client.target(conciergeLocation);
         Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
         for (Room room : rooms) {
+            
+            //TODO: move registration test to a sensible method.. 
+        
+            //test if room is already registered.     
+            try{
+            String name = room.getRoomName();
+            String userId = "game-on.org";
+                       
+            // build the apikey for the query request.
+            String queryParams = "name=" + name + "&owner=" + userId + "&id=" + userId + "&stamp="
+                    + System.currentTimeMillis();
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(registrationSecret.getBytes("UTF-8"), "HmacSHA256"));
+            String hash = javax.xml.bind.DatatypeConverter
+                    .printBase64Binary(mac.doFinal(queryParams.getBytes("UTF-8")));
+
+            // build the complete query url..
+            System.out.println("Querying room registration using url " + conciergeLocation);
+            URL u = new URL(conciergeLocation + "?" + queryParams + "&apikey=" + hash);
+            HttpURLConnection con = (HttpURLConnection) u.openConnection();
+            con.setDoOutput(true);
+            con.setDoInput(true);
+            con.setRequestProperty("Content-Type", "application/json;");
+            con.setRequestProperty("Accept", "application/json,text/plain");
+            con.setRequestProperty("Method", "GET");
+
+            //initiate the request.
+            int httpResult = con.getResponseCode();
+            //a 200 response means map has data for this room already
+            if (httpResult == 200) {
+                System.out.println("Skipping registration for room "+room.getRoomName()+" because it is already known to the map service");
+                continue;
+            }
+            //we expect 204 (no content) .. to say the map didn't know about the room
+            if (httpResult != 204) {
+                //if it's not s 200 or a 204.. we'll just skip registering..
+                System.out.println("Bad http response code from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
+                continue;
+            }else{
+                System.out.println("Room is unknown to Map, Registering room " + room.getRoomName());
+            }
+            }catch(Exception e){
+                System.out.println("Error testing registration for room, will not try to register room");
+                e.printStackTrace();
+                continue;
+            }
+            
             System.out.println("Registering room " + room.getRoomName());
             Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
 
-            net.wasdev.gameon.room.common.Room commonRoom = new net.wasdev.gameon.room.common.Room(room.getRoomId());
+
             String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
             if (endPoint == null) {
                 throw new RuntimeException("The location for the room service cold not be "
                         + "found in a system property or environment variable named : " + ENV_ROOM_SVC);
             }
-            commonRoom.setAttribute("endPoint", endPoint + "/ws/" + room.getRoomId());
-            commonRoom.setAttribute("startLocation", "" + room.isStarterLocation());
-            List<net.wasdev.gameon.room.common.Exit> exits = new ArrayList<net.wasdev.gameon.room.common.Exit>();
-            for (ExitDesc ed : room.getExits()) {
-                if (ed.handler.isVisible()) {
-                    net.wasdev.gameon.room.common.Exit e = new net.wasdev.gameon.room.common.Exit();
-                    e.setName(ed.direction.toString());
-                    e.setDescription(ed.handler.getDescription(null, ed, room));
-                    e.setRoom(ed.targetRoomId);
-                    exits.add(e);
-                }
-            }
-            commonRoom.setExits(exits);
+            
+            // build the registration payload (post data)
+            JsonObjectBuilder registrationPayload = Json.createObjectBuilder();
+            // add the basic room info.
+            registrationPayload.add("name", room.getRoomId());
+            registrationPayload.add("fullName", room.getRoomName());
+            registrationPayload.add("description", room.getRoomDescription());
+            // add the doorway descriptions we'd like the game to use if it
+            // wires us to other rooms.
+            JsonObjectBuilder doors = Json.createObjectBuilder();
+            doors.add("n", "A Large doorway to the north");
+            doors.add("s", "A winding path leading off to the south");
+            doors.add("e", "An overgrown road, covered in brambles");
+            doors.add("w", "A shiny metal door, with a bright red handle");
+            doors.add("u", "A spiral set of stairs, leading upward into the ceiling");
+            doors.add("d", "A tunnel, leading down into the earth");            
+            registrationPayload.add("doors", doors.build());
+            
+            // add the connection info for the room to connect back to us..
+            JsonObjectBuilder connInfo = Json.createObjectBuilder();
+            connInfo.add("type", "websocket"); // the only current supported
+                                               // type.
+            connInfo.add("target", endPoint + "/ws/" +room.getRoomId());
+            registrationPayload.add("connectionDetails", connInfo.build());
 
             SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
             ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp);
@@ -388,9 +376,9 @@ public class LifecycleManager implements ServerApplicationConfig {
             endpoints.add(ServerEndpointConfig.Builder.create(RoomWS.class, "/ws/" + room.getRoomId())
                     .configurator(config).build());
 
-            Response response = builder.post(Entity.json(commonRoom));
+            Response response = builder.post(Entity.json(registrationPayload.build().toString()));
             try {
-                if (Status.OK.getStatusCode() == response.getStatus()) {
+                if (Status.CREATED.getStatusCode() == response.getStatus()) {
                     String resp = response.readEntity(String.class);
                     System.out.println("Registration returned " + resp);
                 } else {
@@ -401,15 +389,6 @@ public class LifecycleManager implements ServerApplicationConfig {
             } finally {
                 response.close();
             }
-        }
-        try{
-            ManagedScheduledExecutorService executor;
-            executor = (ManagedScheduledExecutorService) new InitialContext().lookup("concurrent/execSvc");
-            ReRegisterRoomsForeverThread r = new ReRegisterRoomsForeverThread(rooms,registrationSecret);
-            executor.scheduleAtFixedRate(r, 10, 10, TimeUnit.SECONDS);
-        }catch(Exception e){
-            System.out.println("Error creating room reregistrator.. "+e.getMessage());
-            e.printStackTrace();
         }
 
         return endpoints;
