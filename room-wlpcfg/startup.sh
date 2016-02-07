@@ -9,7 +9,7 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
 
   export service_map=$(etcdctl get /map/url)
   export service_room=$(etcdctl get /room/service)
-  export REGISTRATION_SECRET=$(etcdctl get /passwords/map-key)
+  export MAP_KEY=$(etcdctl get /passwords/map-key)
 
   /opt/ibm/wlp/bin/server start defaultServer
   echo Starting the logstash forwarder...
