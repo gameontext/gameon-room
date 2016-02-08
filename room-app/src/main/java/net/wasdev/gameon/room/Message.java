@@ -48,6 +48,9 @@ public class Message {
     }
 
     public static String getValue(JsonValue value) {
+        if(value==null){
+            return null;
+        }
         if (value.getValueType().equals(ValueType.STRING)) {
             JsonString s = (JsonString) value;
             return s.getString();
