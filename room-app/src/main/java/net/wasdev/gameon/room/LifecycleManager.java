@@ -293,101 +293,103 @@ public class LifecycleManager implements ServerApplicationConfig {
         for (Room room : rooms) {
             
             //TODO: move registration test to a sensible method.. 
-        
+            boolean needToRegisterWithMap = false;
             //test if room is already registered.     
             try{
-            String name = room.getRoomId();
+                String name = room.getRoomId();
+                        
+                // build the apikey for the query request.
+                String queryParams = "name=" + name + "&owner=" + userId;
+    
+                // build the complete query url..
+                System.out.println("Querying room registration using url " + mapLocation);
+                URL u = new URL(mapLocation + "?" + queryParams);
+                System.out.println("Total URL "+u.toExternalForm());
+                HttpURLConnection con = (HttpURLConnection) u.openConnection();
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                //con.setRequestProperty("Content-Type", "application/json;");
+                con.setRequestProperty("Accept", "application/json,text/plain");
+                con.setRequestProperty("Method", "GET");
+                
+                //initiate the request.
+                int httpResult = con.getResponseCode();
+                //a 200 response means map has data for this room already
+                if (httpResult == 200) {
+                    System.out.println("Skipping registration for room "+room.getRoomName()+" because it is already known to the map service");
                     
-            // build the apikey for the query request.
-            String queryParams = "name=" + name + "&owner=" + userId;
-
-            // build the complete query url..
-            System.out.println("Querying room registration using url " + mapLocation);
-            URL u = new URL(mapLocation + "?" + queryParams);
-            System.out.println("Total URL "+u.toExternalForm());
-            HttpURLConnection con = (HttpURLConnection) u.openConnection();
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            //con.setRequestProperty("Content-Type", "application/json;");
-            con.setRequestProperty("Accept", "application/json,text/plain");
-            con.setRequestProperty("Method", "GET");
-            
-            //initiate the request.
-            int httpResult = con.getResponseCode();
-            //a 200 response means map has data for this room already
-            if (httpResult == 200) {
-                System.out.println("Skipping registration for room "+room.getRoomName()+" because it is already known to the map service");
-                
-                //here we should read the response, and update our /exits information.
-                
-                continue;
-            }
-            //we expect 204 (no content) .. to say the map didn't know about the room
-            if (httpResult != 204) {
-                //if it's not s 200 or a 204.. we'll just skip registering..
-                System.out.println("Bad http response code of "+httpResult+" from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
-                continue;
-            }else{
-                System.out.println("Room is unknown to Map, Registering room " + room.getRoomName());
-            }
+                    //here we should read the response, and update our /exits information.
+                }
+                //we expect 204 (no content) .. to say the map didn't know about the room
+                if (httpResult != 204) {
+                    //if it's not s 200 or a 204.. we'll just skip registering..
+                    System.out.println("Bad http response code of "+httpResult+" from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
+                }else{
+                    System.out.println("Room is unknown to Map, Registering room " + room.getRoomName());
+                    needToRegisterWithMap = true;
+                }
             }catch(Exception e){
                 System.out.println("Error testing registration for room, will not try to register room");
                 e.printStackTrace();
-                continue;
+            }
+                        
+           
+            if(needToRegisterWithMap) {               
+                System.out.println("Registering room " + room.getRoomName());
+                
+                String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
+                if (endPoint == null) {
+                    throw new RuntimeException("The location for the room service cold not be "
+                            + "found in a system property or environment variable named : " + ENV_ROOM_SVC);
+                }
+                
+                Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
+              
+                // build the registration payload (post data)
+                JsonObjectBuilder registrationPayload = Json.createObjectBuilder();
+                // add the basic room info.
+                registrationPayload.add("name", room.getRoomId());
+                registrationPayload.add("fullName", room.getRoomName());
+                registrationPayload.add("description", room.getRoomDescription());
+                // add the doorway descriptions we'd like the game to use if it
+                // wires us to other rooms.
+                JsonObjectBuilder doors = Json.createObjectBuilder();
+                doors.add("n", "A Large doorway to the north");
+                doors.add("s", "A winding path leading off to the south");
+                doors.add("e", "An overgrown road, covered in brambles");
+                doors.add("w", "A shiny metal door, with a bright red handle");
+                doors.add("u", "A spiral set of stairs, leading upward into the ceiling");
+                doors.add("d", "A tunnel, leading down into the earth");            
+                registrationPayload.add("doors", doors.build());
+                
+                // add the connection info for the room to connect back to us..
+                JsonObjectBuilder connInfo = Json.createObjectBuilder();
+                connInfo.add("type", "websocket"); // the only current supported
+                                                   // type.
+                connInfo.add("target", endPoint + "/ws/" +room.getRoomId());
+                registrationPayload.add("connectionDetails", connInfo.build());
+    
+                Response response = builder.post(Entity.json(registrationPayload.build().toString()));
+                try {
+                    if (Status.CREATED.getStatusCode() == response.getStatus()) {
+                        String resp = response.readEntity(String.class);
+                        System.out.println("Registration returned " + resp);
+                    } else {
+                        String resp = response.readEntity(String.class);
+                        System.out.println("Error registering room provider : " + room.getRoomName() + " : status code "
+                                + response.getStatus()+"\n"+ resp);
+                    }
+                } finally {
+                    response.close();
+                }
             }
             
-            System.out.println("Registering room " + room.getRoomName());
-            Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
-
-            String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
-            if (endPoint == null) {
-                throw new RuntimeException("The location for the room service cold not be "
-                        + "found in a system property or environment variable named : " + ENV_ROOM_SVC);
-            }
-            
-            // build the registration payload (post data)
-            JsonObjectBuilder registrationPayload = Json.createObjectBuilder();
-            // add the basic room info.
-            registrationPayload.add("name", room.getRoomId());
-            registrationPayload.add("fullName", room.getRoomName());
-            registrationPayload.add("description", room.getRoomDescription());
-            // add the doorway descriptions we'd like the game to use if it
-            // wires us to other rooms.
-            JsonObjectBuilder doors = Json.createObjectBuilder();
-            doors.add("n", "A Large doorway to the north");
-            doors.add("s", "A winding path leading off to the south");
-            doors.add("e", "An overgrown road, covered in brambles");
-            doors.add("w", "A shiny metal door, with a bright red handle");
-            doors.add("u", "A spiral set of stairs, leading upward into the ceiling");
-            doors.add("d", "A tunnel, leading down into the earth");            
-            registrationPayload.add("doors", doors.build());
-            
-            // add the connection info for the room to connect back to us..
-            JsonObjectBuilder connInfo = Json.createObjectBuilder();
-            connInfo.add("type", "websocket"); // the only current supported
-                                               // type.
-            connInfo.add("target", endPoint + "/ws/" +room.getRoomId());
-            registrationPayload.add("connectionDetails", connInfo.build());
-
+            //now regardles of our registration, open our websocket.
             SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
             ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp);
 
             endpoints.add(ServerEndpointConfig.Builder.create(RoomWS.class, "/ws/" + room.getRoomId())
                     .configurator(config).build());
-
-            Response response = builder.post(Entity.json(registrationPayload.build().toString()));
-            try {
-                if (Status.CREATED.getStatusCode() == response.getStatus()) {
-                    String resp = response.readEntity(String.class);
-                    System.out.println("Registration returned " + resp);
-                } else {
-                    String resp = response.readEntity(String.class);
-                    System.out.println("Error registering room provider : " + room.getRoomName() + " : status code "
-                            + response.getStatus()+"\n"+ resp);
-                }
-            } finally {
-                response.close();
-            }
         }
 
         return endpoints;
