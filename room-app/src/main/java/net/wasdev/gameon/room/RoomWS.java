@@ -170,11 +170,15 @@ public class RoomWS extends Endpoint {
 
         String content = Message.getValue(msg.get("content"));
         String userid = Message.getValue(msg.get(Constants.USERID));
-        String username = Message.getValue(msg.get(Constants.USERNAME));
-
+     
         if (content.startsWith("/")) {
             room.command(userid, content.substring(1));
         } else {
+            String username = Message.getValue(msg.get(Constants.USERNAME));
+            if(username==null){
+                System.out.println("Recieved chat msg with missing username "+json);
+                username = userid;
+            }
             // everything else is chat.
             srrp.chatEvent(username, content);
         }

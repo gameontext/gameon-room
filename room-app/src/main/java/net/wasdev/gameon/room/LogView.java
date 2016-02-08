@@ -130,7 +130,7 @@ public class LogView extends HttpServlet {
                                         listFilesInDir(out, logdir, "l");
 
                                         String ffdcDir = new File(new File(logdir), "ffdc").getAbsolutePath();
-                                        out.println("FFDC_DIR: " + String.valueOf(logdir) + "<br>");
+                                        out.println("FFDC_DIR: " + String.valueOf(ffdcDir) + "<br>");
                                         listFilesInDir(out, ffdcDir, "f");
                                     }
                                 } else if ("view".equals(cmd)) {
