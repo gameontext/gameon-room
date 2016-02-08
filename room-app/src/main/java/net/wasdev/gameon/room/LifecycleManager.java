@@ -20,6 +20,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -235,7 +236,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             }
         }
 
-        Collection<Session> activeSessions = new HashSet<Session>();
+        Collection<Session> activeSessions = Collections.synchronizedSet(new HashSet<Session>());
 
         public void addSession(Session s) {
             activeSessions.add(s);
