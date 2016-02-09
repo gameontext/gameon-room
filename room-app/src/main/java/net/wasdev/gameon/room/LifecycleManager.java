@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.crypto.Mac;
@@ -236,7 +237,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             }
         }
 
-        Collection<Session> activeSessions = Collections.synchronizedSet(new HashSet<Session>());
+        Collection<Session> activeSessions = new CopyOnWriteArraySet<Session>();
 
         public void addSession(Session s) {
             activeSessions.add(s);
@@ -316,17 +317,15 @@ public class LifecycleManager implements ServerApplicationConfig {
                 int httpResult = con.getResponseCode();
                 //a 200 response means map has data for this room already
                 if (httpResult == 200) {
-                    System.out.println("Skipping registration for room "+room.getRoomName()+" because it is already known to the map service");
-                    
+                    System.out.println("Skipping registration for room "+room.getRoomName()+" because it is already known to the map service");                    
                     //here we should read the response, and update our /exits information.
-                }
-                //we expect 204 (no content) .. to say the map didn't know about the room
-                if (httpResult != 204) {
-                    //if it's not s 200 or a 204.. we'll just skip registering..
-                    System.out.println("Bad http response code of "+httpResult+" from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
-                }else{
+                }else if (httpResult == 204) {    
+                    //204 - no content.. means we matched no rooms for this owner/roomname on the server..
                     System.out.println("Room is unknown to Map, Registering room " + room.getRoomName());
                     needToRegisterWithMap = true;
+                }else{              
+                    //if it's not s 200 or a 204.. we'll just skip registering..
+                    System.out.println("Bad http response code of "+httpResult+" from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
                 }
             }catch(Exception e){
                 System.out.println("Error testing registration for room, will not try to register room");
