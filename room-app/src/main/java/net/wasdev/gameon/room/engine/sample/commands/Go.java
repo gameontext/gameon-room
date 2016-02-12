@@ -51,11 +51,11 @@ public class Go extends CommandHandler {
         User u = room.getUserById(execBy);
         if (u != null) {
             Exit e = (Exit) command.args.get(0);
-            if (e.exit.handler.isVisible() && e.exit.handler.isTraversable(execBy, e.exit, room)) {
+            if (e.exit.handler.isTraversable(execBy, e.exit, room)) {
                 room.exitEvent(execBy, e.exit.handler.getSelfDepartMessage(execBy, e.exit, room),
-                        e.exit.direction.toString());
+                        e.exit.getDirection().toString());
             } else {
-                room.playerEvent(execBy, "You don't appear able to go " + e.exit.direction.toLongString(), null);
+                room.playerEvent(execBy, "You don't appear able to go " + e.exit.getDirection().toLongString(), null);
             }
         } else {
             System.out.println("Cannot process go command for user " + execBy + " as they are not known to the room");

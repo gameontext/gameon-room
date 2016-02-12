@@ -17,8 +17,11 @@ package net.wasdev.gameon.room.engine;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
+import net.wasdev.gameon.room.engine.meta.ExitDesc;
 import net.wasdev.gameon.room.engine.sample.SampleDataProvider;
 
 public class Engine {
@@ -50,6 +53,9 @@ public class Engine {
         Collection<Room> rooms = e.getRooms();
 
         Room current = rooms.iterator().next();
+        Map<String,ExitDesc> exits = new HashMap<String,ExitDesc>();
+        exits.put("N",new ExitDesc("n","roomName","roomFullName","doorDescriptionText","targetRoomId","type","target"));
+        current.setExits(exits);
 
         // go interactive ;p
         System.out.println("---[[[ OZMONSTA Engine v1.0, EXIT to quit. Room '" + current.getRoomId() + "' ]]]---");

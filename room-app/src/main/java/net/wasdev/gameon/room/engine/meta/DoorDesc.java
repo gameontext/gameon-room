@@ -15,28 +15,34 @@
  *******************************************************************************/
 package net.wasdev.gameon.room.engine.meta;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.concurrent.CopyOnWriteArraySet;
+public class DoorDesc {
 
-public class RoomDesc {
+    public enum Direction {
+        NORTH("N", "North"), SOUTH("S", "South"), EAST("E", "East"), WEST("W", "West"), UP("U", "Up"), DOWN("D",
+                "Down");
+        private final String shortName;
+        private final String longName;
 
-    public final String id;
-    public final String name;
+        Direction(String shortName, String longName) {
+            this.shortName = shortName;
+            this.longName = longName;
+        }
+
+        public String toString() {
+            return shortName;
+        }
+
+        public String toLongString() {
+            return longName;
+        }
+    };
+
+    public final Direction direction;
     public final String description;
-    public final Collection<ItemDesc> items;
-    public final Collection<ItemDesc> defaultItems;
-    public final Collection<DoorDesc> doorways;
 
-    public RoomDesc(String id, String name, String description, ItemDesc[] items,  DoorDesc[] doorways) {
-        this.id = id;
-        this.name = name;
+    public DoorDesc(Direction dir, String description) {
+        this.direction = dir;
         this.description = description;
-        this.items = new CopyOnWriteArraySet<ItemDesc>(Arrays.asList(items));
-        this.defaultItems = Collections.unmodifiableSet(new HashSet<ItemDesc>(this.items));
-        this.doorways = Collections.unmodifiableList(new ArrayList<DoorDesc>(Arrays.asList(doorways)));
     }
+
 }

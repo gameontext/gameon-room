@@ -16,13 +16,16 @@
 package net.wasdev.gameon.room.engine;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.wasdev.gameon.room.engine.meta.ContainerDesc;
+import net.wasdev.gameon.room.engine.meta.DoorDesc;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
 import net.wasdev.gameon.room.engine.meta.ItemDesc;
 import net.wasdev.gameon.room.engine.meta.RoomDesc;
@@ -30,6 +33,9 @@ import net.wasdev.gameon.room.engine.parser.CommandHandler;
 import net.wasdev.gameon.room.engine.parser.CommandTemplate;
 
 public class Room {
+    
+    Map<String, ExitDesc> exitMap;
+    
     RoomDesc roomDesc;
 
     Map<String, User> userMap = new ConcurrentHashMap<String, User>();
@@ -44,12 +50,11 @@ public class Room {
         // "Message sent to everyone :: "+s
         public void roomEvent(String s);
 
-        public void locationEvent(String senderId, String roomName, String roomDescription, Map<String, String> exits,
-                List<String> objects, List<String> inventory);
+        public void locationEvent(String senderId, String roomId, String roomName, String roomDescription, Map<String,String> exits,
+                List<String> objects, List<String> inventory, Map<String,String> commands);
 
-        public void exitEvent(String senderId, String exitMessage, String exitID);
+        public void exitEvent(String senderId, String exitMessage, String exitID, String exitJson);
 
-        public void listExitsEvent(String senderId, Map<String, String> exits);
     }
 
     public static class DebugResponseProcessor implements Room.RoomResponseProcessor {
@@ -65,9 +70,16 @@ public class Room {
         }
 
         @Override
-        public void locationEvent(String senderId, String roomName, String roomDescription, Map<String, String> exits,
-                List<String> objects, List<String> inventory) {
+        public void locationEvent(String senderId, String roomId, String roomName, String roomDescription,Map<String,String> exits,
+                List<String> objects, List<String> inventory, Map<String,String> commands) {
             System.out.println("Location: " + roomName + " (For " + senderId + ") " + roomDescription);
+            if (exits.isEmpty()){
+                System.out.println("There are no exits.");
+            }else{
+                for( Entry<String, String> exit : exits.entrySet()){
+                    System.out.println(" - "+exit.getKey()+" "+exit.getValue());
+                }
+            }
             if (!objects.isEmpty()) {
                 System.out.println("You can see the following items: " + objects);
             }
@@ -77,13 +89,8 @@ public class Room {
         }
 
         @Override
-        public void exitEvent(String senderId, String m, String id) {
+        public void exitEvent(String senderId, String m, String id, String exitJson) {
             System.out.println("Exit succeeded : " + m + " to " + id);
-        }
-
-        @Override
-        public void listExitsEvent(String senderId, Map<String, String> exits) {
-            System.out.println("List of visible exits : " + exits);
         }
     }
 
@@ -101,18 +108,20 @@ public class Room {
 
     public Map<String, String> getExitsMap(String senderId, Room room) {
         Map<String, String> exitMap = new HashMap<String, String>();
-        for (ExitDesc e : room.getExits()) {
-            if (e.handler.isVisible()) {
-                exitMap.put(e.direction.toString(), e.handler.getDescription(senderId, e, room));
-            }
+        for (ExitDesc e : this.exitMap.values()) {
+            exitMap.put(e.getDirection().toString().toLowerCase(), e.getDoorDescription());
         }
         return exitMap;
     }
+    
+    public Collection<ExitDesc> getExits(){
+        return exitMap.values();
+    }
 
     public void locationEvent(String senderId, Room room, String roomDescription, Collection<ExitDesc> exits,
-            List<String> objects, List<String> inventory) {
-        rrp.locationEvent(senderId, room.getRoomName(), roomDescription, getExitsMap(senderId, room), objects,
-                inventory);
+            List<String> objects, List<String> inventory, Map<String,String> commands) {        
+        rrp.locationEvent(senderId, room.getRoomId(), room.getRoomName(), roomDescription, getExitsMap(senderId, room), objects, 
+                inventory,commands);
     }
 
     public void playerEvent(String senderId, String selfMessage, String othersMessage) {
@@ -124,11 +133,7 @@ public class Room {
     }
 
     public void exitEvent(String senderId, String exitMessage, String exitId) {
-        rrp.exitEvent(senderId, exitMessage, exitId);
-    }
-
-    public void listExitsEvent(String senderId, Room room) {
-        rrp.listExitsEvent(senderId, getExitsMap(senderId, room));
+        rrp.exitEvent(senderId, exitMessage, exitId, null);
     }
 
     public void setRoomResponseProcessor(Room.RoomResponseProcessor rrp) {
@@ -184,10 +189,6 @@ public class Room {
         return roomDesc.description;
     }
 
-    public boolean isStarterLocation() {
-        return roomDesc.isStarterLocation;
-    }
-
     public User getUserById(String id) {
         return userMap.get(id);
     }
@@ -199,9 +200,9 @@ public class Room {
     public Collection<ItemDesc> getItems() {
         return roomDesc.items;
     }
-
-    public Collection<ExitDesc> getExits() {
-        return roomDesc.exits;
+    
+    public Collection<DoorDesc> getDoors() {
+        return roomDesc.doorways;
     }
 
     public void resetRoom() {
@@ -221,5 +222,11 @@ public class Room {
 
     public Collection<CommandHandler> getCommands() {
         return commandMap.values();
+    }
+
+    public void setExits(Map<String, ExitDesc> exitMap) {
+        Map<String,ExitDesc> exits = new HashMap<String,ExitDesc>();
+        exits.putAll(exitMap);
+        this.exitMap = Collections.unmodifiableMap(exits);        
     }
 }
