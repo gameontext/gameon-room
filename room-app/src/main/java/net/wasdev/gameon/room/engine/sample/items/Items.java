@@ -17,6 +17,9 @@ package net.wasdev.gameon.room.engine.sample.items;
 
 import net.wasdev.gameon.room.engine.meta.ItemDesc;
 
+/**
+ * A simple class that gives the Items a way to refer to each other.. 
+ */
 public class Items {
     public static final ItemDesc mug = new Mug();
     public static final ItemDesc coffeeMachine = new CoffeeMachine();

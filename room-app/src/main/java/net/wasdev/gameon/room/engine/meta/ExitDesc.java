@@ -15,6 +15,10 @@
  *******************************************************************************/
 package net.wasdev.gameon.room.engine.meta;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+
 import net.wasdev.gameon.room.engine.Room;
 
 public class ExitDesc {
@@ -38,38 +42,64 @@ public class ExitDesc {
             return longName;
         }
     };
-
+    
+    final Direction direction; 
+    final String name;
+    final String fullName; 
+    final String doorDescription; 
+    final String targetId;
+    final String connectionType; 
+    final String connectionTarget;
+    public final ExitHandler handler;
+    
     public interface ExitHandler {
-        /**
-         * @param execBy
-         *            CAN BE NULL (for getDescription only), means supply
-         *            default for concierge at registration.
-         */
-        public String getDescription(String execBy, ExitDesc exit, Room exitOwner);
+
+        public String getDescription(ExitDesc exit, Room exitOwner);
 
         public String getSelfDepartMessage(String execBy, ExitDesc exit, Room exitOwner);
 
         public String getOthersDepartMessage(String execBy, ExitDesc exit, Room exitOwner);
 
-        public boolean isVisible();
-
         public boolean isTraversable(String execBy, ExitDesc exit, Room exitOwner);
     }
-
-    public final Direction direction;
-    public final String targetRoomId;
-    public final ExitHandler handler;
-
-    public ExitDesc(String targetRoomId, Direction dir, String description) {
-        this(targetRoomId, dir, description, true);
-    }
-
-    public ExitDesc(String targetRoomId, Direction dir, final String description, final boolean visible) {
-        // build a default exit handler that has
-        this(targetRoomId, dir, new ExitHandler() {
+    
+    public ExitDesc(String direction, String name, String fullName, String doorDescription, String targetId,
+            String connectionType, String connectionTarget) {
+        super();
+        switch(direction.toLowerCase().trim()){
+            case "n":{
+                this.direction = Direction.NORTH; break;
+            }
+            case "s":{
+                this.direction = Direction.SOUTH; break;
+            }
+            case "e":{
+                this.direction = Direction.EAST; break;
+            }
+            case "w":{
+                this.direction = Direction.WEST; break;
+            }
+            case "u":{
+                this.direction = Direction.UP; break;
+            }
+            case "d":{
+                this.direction = Direction.DOWN; break;
+            }
+            default:{
+                throw new RuntimeException("Unknown direction "+direction);
+            }                
+        }
+        this.name = name;
+        this.fullName = fullName;
+        this.doorDescription = doorDescription;
+        this.targetId = targetId;
+        this.connectionType = connectionType;
+        this.connectionTarget = connectionTarget;
+        
+        this.handler = new ExitHandler() {
             @Override
-            public String getDescription(String execBy, ExitDesc exit, Room exitOwner) {
-                return description;
+            public String getDescription(ExitDesc exit, Room exitOwner) {
+                return doorDescription;
             }
 
             @Override
@@ -83,21 +113,58 @@ public class ExitDesc {
             }
 
             @Override
-            public boolean isVisible() {
-                return visible;
-            }
-
-            @Override
             public boolean isTraversable(String execBy, ExitDesc exit, Room exitOwner) {
                 return true;
             }
-        });
+        };
     }
 
-    public ExitDesc(String targetRoomId, Direction dir, ExitHandler handler) {
-        this.direction = dir;
-        this.handler = handler;
-        this.targetRoomId = targetRoomId;
+    public Direction getDirection() {
+        return direction;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getDoorDescription() {
+        return doorDescription;
+    }
+
+    public String getTargetId() {
+        return targetId;
+    }
+
+    public String getConnectionType() {
+        return connectionType;
+    }
+
+    public String getConnectionTarget() {
+        return connectionTarget;
+    }
+    
+    public String toString() {
+        return toJsonString();
+    }
+    public JsonObject toJsonObject(){
+        JsonObjectBuilder obj = Json.createObjectBuilder();
+        obj.add("name", name);
+        obj.add("fullName", fullName);
+        obj.add("door", doorDescription);
+        obj.add("id", targetId);
+        if(connectionType!=null && connectionTarget!=null){
+            JsonObjectBuilder cd = Json.createObjectBuilder();
+            cd.add("type", connectionType);
+            cd.add("target", connectionTarget);
+            obj.add("connectionDetails", cd.build());
+        }
+        return obj.build();
+    }
+    public String toJsonString(){
+        return toJsonObject().toString();
+    }
 }

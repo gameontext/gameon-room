@@ -16,11 +16,7 @@
 package net.wasdev.gameon.room;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +24,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -43,27 +38,16 @@ import javax.websocket.Endpoint;
 import javax.websocket.Session;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpointConfig;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import net.wasdev.gameon.room.engine.Engine;
 import net.wasdev.gameon.room.engine.Room;
-import net.wasdev.gameon.room.engine.meta.ExitDesc;
 
 /**
  * Manages the registration of all rooms in the Engine with the concierge
  */
 @ApplicationScoped
 public class LifecycleManager implements ServerApplicationConfig {
-    private static final String ENV_MAP_SVC = "service_map";
-    private static final String ENV_ROOM_SVC = "service_room";
-    private String mapLocation = null;
+
     private String registrationSecret;
 
     Engine e = Engine.getEngine();
@@ -80,7 +64,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             response.add("bookmark", bookmark);
 
             String msg = "player," + (selfOnly ? userID : "*") + "," + response.build().toString();
-            System.out.println("ROOM(PE): sending to session " + session.getId() + " message:" + msg);
+            Log.log(Level.FINE, this, "ROOM(PE): sending to session {0} messsage {1}", session.getId(), msg);
             session.getBasicRemote().sendText(msg);
         }
 
@@ -116,8 +100,8 @@ public class LifecycleManager implements ServerApplicationConfig {
             response.add("bookmark", bookmark);
 
             String msg = "player,*," + response.build().toString();
-            System.out.println("ROOM(RE): sending to session " + session.getId() + " message:" + msg);
 
+            Log.log(Level.FINE, this, "ROOM(RE): sending to session {0} messsage {1}", session.getId(), msg);
             session.getBasicRemote().sendText(msg);
         }
 
@@ -147,8 +131,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             for (Session session : activeSessions) {
                 try {
                     String cmsg = "player,*," + json.toString();
-                    System.out.println("ROOM(CE): sending to session " + session.getId() + " message:" + cmsg);
-
+                    Log.log(Level.FINE, this, "ROOM(CE): sending to session {0} messsage {1}", session.getId(), cmsg);
                     session.getBasicRemote().sendText(cmsg);
                 } catch (IOException io) {
                     throw new RuntimeException(io);
@@ -157,23 +140,32 @@ public class LifecycleManager implements ServerApplicationConfig {
         }
 
         @Override
-        public void locationEvent(String senderId, String roomName, String roomDescription, Map<String, String> exits,
-                List<String> objects, List<String> inventory) {
+        public void locationEvent(String senderId, String roomId, String roomName, String roomDescription, Map<String,String> exits,
+                List<String> objects, List<String> inventory, Map<String,String> commands) {
             JsonObjectBuilder content = Json.createObjectBuilder();
             content.add("type", "location");
-            content.add("name", roomName);
+            content.add("name", roomId);
+            content.add("fullName", roomName);
             content.add("description", roomDescription);
-
+            
             JsonObjectBuilder exitJson = Json.createObjectBuilder();
             for (Entry<String, String> e : exits.entrySet()) {
-                exitJson.add(e.getKey(), e.getValue());
+                exitJson.add(e.getKey().toUpperCase(), e.getValue());
             }
             content.add("exits", exitJson.build());
+            
+            JsonObjectBuilder commandJson = Json.createObjectBuilder();
+            for (Entry<String, String> c : commands.entrySet()) {
+                commandJson.add(c.getKey().toUpperCase(), c.getValue());
+            }
+            content.add("commands", commandJson.build());
+            
             JsonArrayBuilder inv = Json.createArrayBuilder();
             for (String i : inventory) {
                 inv.add(i);
             }
             content.add("pockets", inv.build());
+            
             JsonArrayBuilder objs = Json.createArrayBuilder();
             for (String o : objects) {
                 objs.add(o);
@@ -185,7 +177,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             for (Session session : activeSessions) {
                 try {
                     String lmsg = "player," + senderId + "," + json.toString();
-                    System.out.println("ROOM(LE): sending to session " + session.getId() + " message:" + lmsg);
+                    Log.log(Level.FINE, this, "ROOM(LE): sending to session {0} messsage {1}", session.getId(), lmsg);
                     session.getBasicRemote().sendText(lmsg);
                 } catch (IOException io) {
                     throw new RuntimeException(io);
@@ -194,32 +186,7 @@ public class LifecycleManager implements ServerApplicationConfig {
         }
 
         @Override
-        public void listExitsEvent(String senderId, Map<String, String> exits) {
-
-            JsonObjectBuilder exitMap = Json.createObjectBuilder();
-            for (Entry<String, String> entry : exits.entrySet()) {
-                exitMap.add(entry.getKey(), entry.getValue());
-            }
-
-            JsonObjectBuilder content = Json.createObjectBuilder();
-            content.add(Constants.TYPE, Constants.EXITS);
-            content.add(Constants.CONTENT, exitMap.build());
-
-            String lmsg = "player," + senderId + "," + content.build().toString();
-            for (Session session : activeSessions) {
-                if (session.isOpen()) {
-                    try {
-                        System.out.println("ROOM(LEE): sending to session " + session.getId() + " message:" + lmsg);
-                        session.getBasicRemote().sendText(lmsg);
-                    } catch (IOException io) {
-                        throw new RuntimeException(io);
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void exitEvent(String senderId, String message, String exitID) {
+        public void exitEvent(String senderId, String message, String exitID, String exitJson) {
             JsonObjectBuilder content = Json.createObjectBuilder();
             content.add("type", "exit");
             content.add("exitId", exitID);
@@ -229,7 +196,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             for (Session session : activeSessions) {
                 try {
                     String emsg = "playerLocation," + senderId + "," + json.toString();
-                    System.out.println("ROOM(EE): sending to session " + session.getId() + " message:" + emsg);
+                    Log.log(Level.FINE, this, "ROOM(EE): sending to session {0} messsage {1}", session.getId(), emsg);
                     session.getBasicRemote().sendText(emsg);
                 } catch (IOException io) {
                     throw new RuntimeException(io);
@@ -248,18 +215,13 @@ public class LifecycleManager implements ServerApplicationConfig {
         }
     }
 
-    private void getConfig() throws ServletException {
-        mapLocation = System.getProperty(ENV_MAP_SVC, System.getenv(ENV_MAP_SVC));
-        if (mapLocation == null) {
-            throw new ServletException("The location for the map service cold not be "
-                    + "found in a system property or environment variable named : " + ENV_MAP_SVC);
-        }
+    private void getConfig() {
         try {
             registrationSecret = (String) new InitialContext().lookup("registrationSecret");
         } catch (NamingException e) {
         }
         if (registrationSecret == null) {
-            throw new ServletException("registrationSecret was not found, check server.xml/server.env");
+            throw new IllegalStateException("registrationSecret was not found, check server.xml/server.env");
         }
     }
 
@@ -282,108 +244,19 @@ public class LifecycleManager implements ServerApplicationConfig {
     }
 
     private Set<ServerEndpointConfig> registerRooms(Collection<Room> rooms) {
-        Client client = ClientBuilder.newClient();
-        String userId = "game-on.org";
-        
-        // add the apikey handler for the registration request.
-        GameOnHeaderAuthInterceptor apikey = new GameOnHeaderAuthInterceptor(userId, registrationSecret);
-        client.register(apikey);
 
-        WebTarget target = client.target(mapLocation);
         Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
         for (Room room : rooms) {
             
-            //TODO: move registration test to a sensible method.. 
-            boolean needToRegisterWithMap = false;
-            //test if room is already registered.     
+            RoomRegistrationHandler roomRegistration = new RoomRegistrationHandler(room, registrationSecret);
             try{
-                String name = room.getRoomId();
-                        
-                // build the apikey for the query request.
-                String queryParams = "name=" + name + "&owner=" + userId;
-    
-                // build the complete query url..
-                System.out.println("Querying room registration using url " + mapLocation);
-                URL u = new URL(mapLocation + "?" + queryParams);
-                System.out.println("Total URL "+u.toExternalForm());
-                HttpURLConnection con = (HttpURLConnection) u.openConnection();
-                con.setDoOutput(true);
-                con.setDoInput(true);
-                //con.setRequestProperty("Content-Type", "application/json;");
-                con.setRequestProperty("Accept", "application/json,text/plain");
-                con.setRequestProperty("Method", "GET");
-                
-                //initiate the request.
-                int httpResult = con.getResponseCode();
-                //a 200 response means map has data for this room already
-                if (httpResult == 200) {
-                    System.out.println("Skipping registration for room "+room.getRoomName()+" because it is already known to the map service");                    
-                    //here we should read the response, and update our /exits information.
-                }else if (httpResult == 204) {    
-                    //204 - no content.. means we matched no rooms for this owner/roomname on the server..
-                    System.out.println("Room is unknown to Map, Registering room " + room.getRoomName());
-                    needToRegisterWithMap = true;
-                }else{              
-                    //if it's not s 200 or a 204.. we'll just skip registering..
-                    System.out.println("Bad http response code of "+httpResult+" from Map when querying for room "+room.getRoomName()+" skipping registration of this room");
-                }
+                roomRegistration.performRegistration();
             }catch(Exception e){
-                System.out.println("Error testing registration for room, will not try to register room");
-                e.printStackTrace();
-            }
-                        
-           
-            if(needToRegisterWithMap) {               
-                System.out.println("Registering room " + room.getRoomName());
-                
-                String endPoint = System.getProperty(ENV_ROOM_SVC, System.getenv(ENV_ROOM_SVC));
-                if (endPoint == null) {
-                    throw new RuntimeException("The location for the room service cold not be "
-                            + "found in a system property or environment variable named : " + ENV_ROOM_SVC);
-                }
-                
-                Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
-              
-                // build the registration payload (post data)
-                JsonObjectBuilder registrationPayload = Json.createObjectBuilder();
-                // add the basic room info.
-                registrationPayload.add("name", room.getRoomId());
-                registrationPayload.add("fullName", room.getRoomName());
-                registrationPayload.add("description", room.getRoomDescription());
-                // add the doorway descriptions we'd like the game to use if it
-                // wires us to other rooms.
-                JsonObjectBuilder doors = Json.createObjectBuilder();
-                doors.add("n", "A Large doorway to the north");
-                doors.add("s", "A winding path leading off to the south");
-                doors.add("e", "An overgrown road, covered in brambles");
-                doors.add("w", "A shiny metal door, with a bright red handle");
-                doors.add("u", "A spiral set of stairs, leading upward into the ceiling");
-                doors.add("d", "A tunnel, leading down into the earth");            
-                registrationPayload.add("doors", doors.build());
-                
-                // add the connection info for the room to connect back to us..
-                JsonObjectBuilder connInfo = Json.createObjectBuilder();
-                connInfo.add("type", "websocket"); // the only current supported
-                                                   // type.
-                connInfo.add("target", endPoint + "/ws/" +room.getRoomId());
-                registrationPayload.add("connectionDetails", connInfo.build());
-    
-                Response response = builder.post(Entity.json(registrationPayload.build().toString()));
-                try {
-                    if (Status.CREATED.getStatusCode() == response.getStatus()) {
-                        String resp = response.readEntity(String.class);
-                        System.out.println("Registration returned " + resp);
-                    } else {
-                        String resp = response.readEntity(String.class);
-                        System.out.println("Error registering room provider : " + room.getRoomName() + " : status code "
-                                + response.getStatus()+"\n"+ resp);
-                    }
-                } finally {
-                    response.close();
-                }
+                Log.log(Level.SEVERE, this, "Room Registration FAILED", e);
+                //we keep running, maybe we were registered ok before...
             }
             
-            //now regardles of our registration, open our websocket.
+            //now regardless of our registration, open our websocket.
             SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
             ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp);
 
@@ -397,14 +270,15 @@ public class LifecycleManager implements ServerApplicationConfig {
     @Override
     public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpointClasses) {
         try {
-            getConfig();
+            if(registrationSecret==null)
+                getConfig();
             return registerRooms(e.getRooms());
-        } catch (ServletException e) {
-            System.err.println("Error building endpoint configs for ro");
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        } catch (IllegalStateException e) {
+            Log.log(Level.SEVERE, this, "Error building endpoint configs for room", e);
+            //getEndpointConfigs is defined by ServerApplicationConfig, and doesn't allow for failure.. 
+            //so this is the best we can do.. 
+            throw e;
         }
-
     }
 
     @Override

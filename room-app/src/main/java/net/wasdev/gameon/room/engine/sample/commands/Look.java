@@ -18,8 +18,10 @@ package net.wasdev.gameon.room.engine.sample.commands;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.wasdev.gameon.room.engine.Room;
@@ -71,7 +73,13 @@ public class Look extends CommandHandler {
                 for (ItemDesc i : u.inventory) {
                     invItems.add(i.name);
                 }
-                room.locationEvent(execBy, room, room.getRoomDescription(), room.getExits(), roomItems, invItems);
+                Map<String,String> commands = new HashMap<String,String>();
+                for(CommandHandler ch : room.getCommands()){
+                    for(CommandTemplate ct : ch.getTemplates()){
+                        commands.put(ct.template.get(0).data, ct.key);
+                    }
+                }
+                room.locationEvent(execBy, room, room.getRoomDescription(), room.getExits(), roomItems, invItems,commands);
             } else if (key.equals(lookAtRoomItem.key) || key.equals(lookAtInventoryItem.key)
                     || key.equals(lookAtItemInContainer.key)) {
                 Item i = (Item) command.args.get(1);

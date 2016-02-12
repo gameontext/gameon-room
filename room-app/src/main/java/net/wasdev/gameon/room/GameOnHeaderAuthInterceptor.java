@@ -18,31 +18,16 @@ package net.wasdev.gameon.room;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
+import java.util.logging.Level;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
-public class GameOnHeaderAuthInterceptor implements WriterInterceptor {
-    public static final String SYSPROP_LOGGING = "apikey.log"; 
-    private static final String CHAR_SET = "UTF-8";
-    private static final String HMAC_ALGORITHM = "HmacSHA256";
-    private static final String HASH_ALGORITHM = "SHA-256";
-
-    private final String secret;
-    private final String userId;
-
+public class GameOnHeaderAuthInterceptor extends GameOnHeaderAuth implements WriterInterceptor {
     /**
      * Constructor to be used by the client.
      * 
@@ -52,36 +37,14 @@ public class GameOnHeaderAuthInterceptor implements WriterInterceptor {
      *            the shared secret to use.
      */
     public GameOnHeaderAuthInterceptor(String userId, String secret) {
-        this.userId = userId;
-
-        if (secret != null)
-            this.secret = secret;
-        else
-            throw new RuntimeException("NULL secret");
+        super(secret,userId);
+        if (secret == null)       
+            throw new IllegalStateException("NULL secret");
     }
     
-    private String buildHmac(List<String> stuffToHash, String key) throws NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException{
-        Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-        mac.init(new SecretKeySpec(key.getBytes("UTF-8"), HMAC_ALGORITHM));
-        
-        StringBuffer hashData = new StringBuffer();
-        for(String s: stuffToHash){
-            hashData.append(s);            
-        }
-        
-        return Base64.getEncoder().encodeToString( mac.doFinal(hashData.toString().getBytes(CHAR_SET)) );
-    }
-     
-    private String buildHash(byte[] data) throws NoSuchAlgorithmException, UnsupportedEncodingException{
-        MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
-        md.update(data); 
-        byte[] digest = md.digest();
-        return Base64.getEncoder().encodeToString( digest );
-    }
-
     @Override
     public void aroundWriteTo(WriterInterceptorContext context) throws IOException, WebApplicationException {      
-        try{     
+        try{               
             //read the body from the request.. 
             OutputStream old = context.getOutputStream();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -105,9 +68,9 @@ public class GameOnHeaderAuthInterceptor implements WriterInterceptor {
                                        dateValue,
                                        bodyHash
                                    }),secret);
-            
-            System.out.println("hmac "+hmac+" FROM "+userId+dateValue+bodyHash);
     
+            Log.log(Level.FINE, this, "Hmac {0} from userId{1} dateValue{1} bodyHash{2}", hmac,userId,dateValue,bodyHash);
+            
             MultivaluedMap<String, Object> headers = context.getHeaders();
             headers.add("gameon-id", userId);
             headers.add("gameon-date", dateValue);
@@ -117,8 +80,7 @@ public class GameOnHeaderAuthInterceptor implements WriterInterceptor {
             old.write(body);
         
         }catch(Exception e){
-            System.out.println("Bad stuff happened .. "+e.getMessage());
-            e.printStackTrace();
+            Log.log(Level.WARNING, this, "Error during auth interceptor", e);
             throw new IOException(e);
         }
     }

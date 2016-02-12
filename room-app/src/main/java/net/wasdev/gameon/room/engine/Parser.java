@@ -115,9 +115,9 @@ public class Parser {
 
     protected static ExitDesc findExitInRoom(String cmd, Room room) {
         String exitName = getFirstWordFromCommand(cmd);
-        for (ExitDesc exit : room.roomDesc.exits) {
-            if (exit.direction.toString().equalsIgnoreCase(exitName)
-                    || exit.direction.toLongString().equalsIgnoreCase(exitName)) {
+        for (ExitDesc exit : room.exitMap.values()) {
+            if (exit.getDirection().toString().equalsIgnoreCase(exitName)
+                    || exit.getDirection().toLongString().equalsIgnoreCase(exitName)) {
                 return exit;
             }
         }

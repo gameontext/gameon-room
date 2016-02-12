@@ -19,7 +19,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
 
+import net.wasdev.gameon.room.Log;
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.User;
 import net.wasdev.gameon.room.engine.parser.CommandHandler;
@@ -51,14 +53,14 @@ public class Go extends CommandHandler {
         User u = room.getUserById(execBy);
         if (u != null) {
             Exit e = (Exit) command.args.get(0);
-            if (e.exit.handler.isVisible() && e.exit.handler.isTraversable(execBy, e.exit, room)) {
+            if (e.exit.handler.isTraversable(execBy, e.exit, room)) {
                 room.exitEvent(execBy, e.exit.handler.getSelfDepartMessage(execBy, e.exit, room),
-                        e.exit.direction.toString());
+                        e.exit.getDirection().toString());
             } else {
-                room.playerEvent(execBy, "You don't appear able to go " + e.exit.direction.toLongString(), null);
+                room.playerEvent(execBy, "You don't appear able to go " + e.exit.getDirection().toLongString(), null);
             }
         } else {
-            System.out.println("Cannot process go command for user " + execBy + " as they are not known to the room");
+            Log.log(Level.INFO, this, "Cannot process go command for user {0} as they are not known to the room", execBy);
         }
     }
 

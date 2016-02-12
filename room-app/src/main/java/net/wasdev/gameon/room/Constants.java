@@ -28,4 +28,9 @@ public interface Constants {
     String EXITS = "exits";
     String EXITID = "exitId";
     String STATE = "state";
+    //env var names
+    String ENV_ROOM_SVC = "service_room";
+    String ENV_MAP_SVC = "service_map";
+    //gameon-system id.
+    String GAMEON_ID = "game-on.org";
 }
