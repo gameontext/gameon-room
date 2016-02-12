@@ -23,7 +23,7 @@
     <!-- Our key that allows us to register rooms -->
     <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
 
-	<logging traceSpecification="*=info:net.wasdev.gameon.*=all"/>
+	<logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
 
 	<!-- This is required to prevent the web apps from being lazily loaded -->
 	<webContainer deferServletLoad="false"/>
