@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -58,7 +59,7 @@ public class RoomWS extends Endpoint {
             try {
                 owner.receiveMessage(message, session);
             } catch (IOException io) {
-                System.err.println("IO Exception sending message to session " + io);
+                Log.log(Level.SEVERE, this, "IO Exception sending message to session", io);
             }
         }
     }
@@ -66,21 +67,21 @@ public class RoomWS extends Endpoint {
     @Override
     public void onOpen(final Session session, EndpointConfig ec) {
 
-        Log.endPoint(this, "onOpen called against room " + this.room.getRoomId());
+        Log.log(Level.FINE,this, "onOpen called against room " + this.room.getRoomId());
         if (srrp.activeSessions.size() == 0) {
-            Log.endPoint(this, " No sessions known.");
+            Log.log(Level.FINE,this, " No sessions known.");
         }
         for (Session s : srrp.activeSessions) {
-            Log.endPoint(this, " Session: " + s.getId());
-            Log.endPoint(this, "   handlers: " + s.getMessageHandlers().size());
+            Log.log(Level.FINE,this, " Session: " + s.getId());
+            Log.log(Level.FINE,this, "   handlers: " + s.getMessageHandlers().size());
             int mhc = 0;
             for (MessageHandler m : s.getMessageHandlers()) {
                 if (m instanceof SessionMessageHandler) {
                     SessionMessageHandler smh = (SessionMessageHandler) m;
-                    Log.endPoint(this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
+                    Log.log(Level.FINE,this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
                             + " linked to room " + smh.owner.room.getRoomId());
                 } else {
-                    Log.endPoint(this, "    [" + mhc + "] unknown handler");
+                    Log.log(Level.FINE,this, "    [" + mhc + "] unknown handler");
                 }
                 mhc++;
             }
@@ -97,18 +98,18 @@ public class RoomWS extends Endpoint {
 
         session.addMessageHandler(String.class, chosen);
 
-        Log.endPoint(this, "after opOpen room " + this.room.getRoomId());
+        Log.log(Level.FINE,this, "after opOpen room " + this.room.getRoomId());
         for (Session s : srrp.activeSessions) {
-            Log.endPoint(this, " Session: " + s.getId());
-            Log.endPoint(this, "   handlers: " + s.getMessageHandlers().size());
+            Log.log(Level.FINE,this, " Session: " + s.getId());
+            Log.log(Level.FINE,this, "   handlers: " + s.getMessageHandlers().size());
             int mhc = 0;
             for (MessageHandler m : s.getMessageHandlers()) {
                 if (m instanceof SessionMessageHandler) {
                     SessionMessageHandler smh = (SessionMessageHandler) m;
-                    Log.endPoint(this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
+                    Log.log(Level.FINE,this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
                             + " linked to room " + smh.owner.room.getRoomId());
                 } else {
-                    Log.endPoint(this, "    [" + mhc + "] unknown handler");
+                    Log.log(Level.FINE,this, "    [" + mhc + "] unknown handler");
                 }
                 mhc++;
             }
@@ -126,18 +127,18 @@ public class RoomWS extends Endpoint {
             session.removeMessageHandler(handler);
         }
 
-        Log.endPoint(this, "onClose called against room " + this.room.getRoomId());
+        Log.log(Level.FINE,this, "onClose called against room " + this.room.getRoomId());
         for (Session s : srrp.activeSessions) {
-            Log.endPoint(this, " Session: " + s.getId());
-            Log.endPoint(this, "   handlers: " + s.getMessageHandlers().size());
+            Log.log(Level.FINE,this, " Session: " + s.getId());
+            Log.log(Level.FINE,this, "   handlers: " + s.getMessageHandlers().size());
             int mhc = 0;
             for (MessageHandler m : s.getMessageHandlers()) {
                 if (m instanceof SessionMessageHandler) {
                     SessionMessageHandler smh = (SessionMessageHandler) m;
-                    Log.endPoint(this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
+                    Log.log(Level.FINE,this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
                             + " linked to room " + smh.owner.room.getRoomId());
                 } else {
-                    Log.endPoint(this, "    [" + mhc + "] unknown handler");
+                    Log.log(Level.FINE,this, "    [" + mhc + "] unknown handler");
                 }
                 mhc++;
             }
@@ -145,8 +146,7 @@ public class RoomWS extends Endpoint {
     }
 
     public void receiveMessage(String message, Session session) throws IOException {
-        System.out.println("ROOMX: [" + this.hashCode() + ":" + this.room.getRoomId() + "] sess:[" + session.hashCode()
-                + ":" + session.getId() + " mess:" + message);
+        Log.log(Level.FINE, this, "ROOMX: [{0}:{1}] sess[{2}:{3}] : {4}", this.hashCode(),this.room.getRoomId(),session.hashCode(),session.getId(),message);
         String[] contents = Message.splitRouting(message);
         if (contents[0].equals("roomHello")) {
             addNewPlayer(session, contents[2]);
@@ -161,11 +161,12 @@ public class RoomWS extends Endpoint {
             return;
         }
         System.out.println("ERR: Unknown message type for room " + room.getRoomId() + " message:" + message);
+        Log.log(Level.SEVERE, this, "Unknown Message Type {0} for room {1} message {2}", contents[0], room.getRoomId(),message);
     }
 
     // process a command
     private void processCommand(Session session, String json) throws IOException {
-        Log.endPoint(this, "Command received from the user, " + this);
+        Log.log(Level.FINE,this, "Command received from the user, " + this);
         JsonObject msg = Json.createReader(new StringReader(json)).readObject();
 
         String content = Message.getValue(msg.get("content"));
@@ -209,7 +210,7 @@ public class RoomWS extends Endpoint {
     public void onError(Session session, Throwable thr) {
         // (lifecycle) Called if/when an error occurs and the connection is
         // disrupted
-        Log.endPoint(this, "oops: " + thr);
+        Log.log(Level.WARNING,this,"onError called on WebSocket",thr);
     }
 
 }

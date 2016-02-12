@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
@@ -37,9 +38,6 @@ import javax.websocket.Endpoint;
 import javax.websocket.Session;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpointConfig;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 
 import net.wasdev.gameon.room.engine.Engine;
 import net.wasdev.gameon.room.engine.Room;
@@ -50,7 +48,6 @@ import net.wasdev.gameon.room.engine.Room;
 @ApplicationScoped
 public class LifecycleManager implements ServerApplicationConfig {
 
-    private String mapLocation = null;
     private String registrationSecret;
 
     Engine e = Engine.getEngine();
@@ -67,7 +64,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             response.add("bookmark", bookmark);
 
             String msg = "player," + (selfOnly ? userID : "*") + "," + response.build().toString();
-            System.out.println("ROOM(PE): sending to session " + session.getId() + " message:" + msg);
+            Log.log(Level.FINE, this, "ROOM(PE): sending to session {0} messsage {1}", session.getId(), msg);
             session.getBasicRemote().sendText(msg);
         }
 
@@ -103,8 +100,8 @@ public class LifecycleManager implements ServerApplicationConfig {
             response.add("bookmark", bookmark);
 
             String msg = "player,*," + response.build().toString();
-            System.out.println("ROOM(RE): sending to session " + session.getId() + " message:" + msg);
 
+            Log.log(Level.FINE, this, "ROOM(RE): sending to session {0} messsage {1}", session.getId(), msg);
             session.getBasicRemote().sendText(msg);
         }
 
@@ -134,8 +131,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             for (Session session : activeSessions) {
                 try {
                     String cmsg = "player,*," + json.toString();
-                    System.out.println("ROOM(CE): sending to session " + session.getId() + " message:" + cmsg);
-
+                    Log.log(Level.FINE, this, "ROOM(CE): sending to session {0} messsage {1}", session.getId(), cmsg);
                     session.getBasicRemote().sendText(cmsg);
                 } catch (IOException io) {
                     throw new RuntimeException(io);
@@ -181,7 +177,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             for (Session session : activeSessions) {
                 try {
                     String lmsg = "player," + senderId + "," + json.toString();
-                    System.out.println("ROOM(LE): sending to session " + session.getId() + " message:" + lmsg);
+                    Log.log(Level.FINE, this, "ROOM(LE): sending to session {0} messsage {1}", session.getId(), lmsg);
                     session.getBasicRemote().sendText(lmsg);
                 } catch (IOException io) {
                     throw new RuntimeException(io);
@@ -200,7 +196,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             for (Session session : activeSessions) {
                 try {
                     String emsg = "playerLocation," + senderId + "," + json.toString();
-                    System.out.println("ROOM(EE): sending to session " + session.getId() + " message:" + emsg);
+                    Log.log(Level.FINE, this, "ROOM(EE): sending to session {0} messsage {1}", session.getId(), emsg);
                     session.getBasicRemote().sendText(emsg);
                 } catch (IOException io) {
                     throw new RuntimeException(io);
@@ -219,13 +215,13 @@ public class LifecycleManager implements ServerApplicationConfig {
         }
     }
 
-    private void getConfig() throws ServletException {
+    private void getConfig() {
         try {
             registrationSecret = (String) new InitialContext().lookup("registrationSecret");
         } catch (NamingException e) {
         }
         if (registrationSecret == null) {
-            throw new ServletException("registrationSecret was not found, check server.xml/server.env");
+            throw new IllegalStateException("registrationSecret was not found, check server.xml/server.env");
         }
     }
 
@@ -256,8 +252,8 @@ public class LifecycleManager implements ServerApplicationConfig {
             try{
                 roomRegistration.performRegistration();
             }catch(Exception e){
-                System.out.println("Room registration FAILED : "+e.getMessage());
-                e.printStackTrace();
+                Log.log(Level.SEVERE, this, "Room Registration FAILED", e);
+                //we keep running, maybe we were registered ok before...
             }
             
             //now regardless of our registration, open our websocket.
@@ -277,12 +273,12 @@ public class LifecycleManager implements ServerApplicationConfig {
             if(registrationSecret==null)
                 getConfig();
             return registerRooms(e.getRooms());
-        } catch (ServletException e) {
-            System.err.println("Error building endpoint configs for ro");
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        } catch (IllegalStateException e) {
+            Log.log(Level.SEVERE, this, "Error building endpoint configs for room", e);
+            //getEndpointConfigs is defined by ServerApplicationConfig, and doesn't allow for failure.. 
+            //so this is the best we can do.. 
+            throw e;
         }
-
     }
 
     @Override

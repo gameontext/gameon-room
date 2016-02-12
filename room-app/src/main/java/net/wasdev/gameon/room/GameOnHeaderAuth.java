@@ -27,7 +27,7 @@ public class GameOnHeaderAuth {
     protected String buildHmac(List<String> stuffToHash, String key)
             throws NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException {
                 Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-                mac.init(new SecretKeySpec(key.getBytes("UTF-8"), HMAC_ALGORITHM));
+                mac.init(new SecretKeySpec(key.getBytes(CHAR_SET), HMAC_ALGORITHM));
                 
                 StringBuffer hashData = new StringBuffer();
                 for(String s: stuffToHash){

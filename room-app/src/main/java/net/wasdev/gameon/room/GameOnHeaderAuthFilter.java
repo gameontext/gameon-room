@@ -3,6 +3,7 @@ package net.wasdev.gameon.room;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.logging.Level;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
@@ -13,7 +14,7 @@ public class GameOnHeaderAuthFilter extends GameOnHeaderAuth implements ClientRe
     public GameOnHeaderAuthFilter(String userId, String secret) {
         super(secret,userId);
         if (secret == null)       
-            throw new RuntimeException("NULL secret");
+            throw new IllegalStateException("NULL secret");
     }
     
     @Override
@@ -32,8 +33,7 @@ public class GameOnHeaderAuthFilter extends GameOnHeaderAuth implements ClientRe
             headers.add("gameon-signature", hmac);
 
         } catch (Exception e) {
-            System.out.println("Bad stuff happened .. " + e.getMessage());
-            e.printStackTrace();
+            Log.log(Level.WARNING, this, "Error during auth filter", e);
             throw new IOException(e);
         }
     }

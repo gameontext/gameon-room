@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 
 import javax.enterprise.concurrent.ManagedScheduledExecutorService;
 import javax.json.Json;
@@ -46,12 +47,12 @@ public class RoomRegistrationHandler {
         
         endPoint = System.getProperty(Constants.ENV_ROOM_SVC, System.getenv(Constants.ENV_ROOM_SVC));
         if (endPoint == null) {
-            throw new RuntimeException("The location for the room service cold not be "
+            throw new IllegalStateException("The location for the room service cold not be "
                     + "found in a system property or environment variable named : " + Constants.ENV_ROOM_SVC);
         }
         mapLocation = System.getProperty(Constants.ENV_MAP_SVC, System.getenv(Constants.ENV_MAP_SVC));
         if (mapLocation == null) {
-            throw new RuntimeException("The location for the map service cold not be "
+            throw new IllegalStateException("The location for the map service cold not be "
                     + "found in a system property or environment variable named : " + Constants.ENV_MAP_SVC);
         }
     }
@@ -111,7 +112,7 @@ public class RoomRegistrationHandler {
                     Response response = builder.get();
                     respString = response.readEntity(String.class);    
                     
-                    System.out.println("EXISTING_INFO("+Constants.GAMEON_ID+")("+room.getRoomId()+") : "+respString);
+                    Log.log(Level.FINE, this, "EXISTING_INFO({0})({1}):{2}", Constants.GAMEON_ID, room.getRoomId(), respString);
                     
                     reader = Json.createReader(new StringReader(respString));                    
                     queryResponse = reader.readObject();
@@ -154,18 +155,20 @@ public class RoomRegistrationHandler {
     
     private void handle503() throws Exception{
         try{
-            System.out.println("Scheduling room "+room.getRoomId()+" to be registered via bg thread.");
+            Log.log(Level.INFO, this, "Scheduling room {0} to be registered via bg thread.", room.getRoomId());
             ManagedScheduledExecutorService executor;
             executor = (ManagedScheduledExecutorService) new InitialContext().lookup("concurrent/execSvc");         
             
             Thread r = new Thread(){
                 public void run() {
                     try{
-                        System.out.println("bg registration thread for "+room.getRoomId()+" running.");
+                        Log.log(Level.INFO, this, "Registration thread for room {0} has awoken.", room.getRoomId());
                         if(performRegistration()){
                             executor.shutdown();
                         }
                     }catch(Exception e){
+                        //we're in a thread.. documentation for the scheduled executor service says 
+                        //to throw an exception to terminate the scheduler.. here we go.
                         throw new RuntimeException("Registration Thread Fail",e);
                     }
                 };
@@ -185,7 +188,7 @@ public class RoomRegistrationHandler {
                 if(updatedRegistration.type == RegistrationResult.Type.REGISTERED){
                     updateRoomWithExits(updatedRegistration.registeredObject);
                 }else{
-                    System.out.println("Unable to update room registration for "+room.getRoomId());
+                    Log.log(Level.SEVERE, this, "Unable to update room registration for room {0}", room.getRoomId());
                     //use old registered room exit info.
                     updateRoomWithExits(existingRegistration.registeredObject);
                 }
@@ -213,20 +216,21 @@ public class RoomRegistrationHandler {
         Map<String,ExitDesc> exitMap = new HashMap<String,ExitDesc>();
         for(Entry<String, JsonValue> e : exits.entrySet()){
             try{
-            JsonObject j = (JsonObject)e.getValue();
-            //can be null, eg when linking back to firstroom
-            JsonObject c = j.getJsonObject("connectionDetails");
-            ExitDesc exit = new ExitDesc(e.getKey(), 
-                    j.getString("name"), 
-                    j.getString("fullName"), 
-                    j.getString("door"), 
-                    j.getString("_id"),
-                    c!=null?c.getString("type"):null,
-                    c!=null?c.getString("target"):null);
-            exitMap.put(e.getKey(), exit);
-            System.out.println("Added exit "+e.getKey()+" to "+room.getRoomId()+" : "+exit);
+                JsonObject j = (JsonObject)e.getValue();
+                //can be null, eg when linking back to firstroom
+                JsonObject c = j.getJsonObject("connectionDetails");
+                ExitDesc exit = new ExitDesc(e.getKey(), 
+                        j.getString("name"), 
+                        j.getString("fullName"), 
+                        j.getString("door"), 
+                        j.getString("_id"),
+                        c!=null?c.getString("type"):null,
+                        c!=null?c.getString("target"):null);
+                exitMap.put(e.getKey(), exit);
+                Log.log(Level.FINER, this, "Added exit {0} to {1} : {2}", e.getKey(), room.getRoomId(), exit);
             }catch(Exception ex){
-                ex.printStackTrace();
+                Log.log(Level.SEVERE, this, "Unexpected issue reading exit description from room registration",ex);
+                //maybe the next exit is good?
             }
         }
         room.setExits(exitMap);
@@ -252,7 +256,7 @@ public class RoomRegistrationHandler {
                     }
                 }
             }else{
-                System.out.println("Door count mismatch.");
+                Log.log(Level.INFO,this,"Door count mismatch.");
             }
             //if all the doors matched.. lets check the connection details..
             if(count==0){
@@ -265,23 +269,24 @@ public class RoomRegistrationHandler {
                         needsUpdate = false;
                         
                     }else{
-                        System.out.println("ConnectionDetails mismatch.");
+                        Log.log(Level.INFO,this,"ConnectionDetails mismatch.");
                     }
                 }else{
-                    System.out.println("ConnectionDetails absent.");
+                    Log.log(Level.INFO,this,"ConnectionDetails absent.");
                 }
             }else{
-                System.out.println("Doors content mismatch.");
+                Log.log(Level.INFO,this,"Doors content mismatch.");
             }
         }else{
-            System.out.println("Basic room compare failed.");
+            Log.log(Level.INFO,this,"Basic room compare failed.");
         }
         
         if(needsUpdate){         
             System.out.println("Update required for "+room.getRoomId());
+            Log.log(Level.INFO,this,"Update required for {0}",room.getRoomId());
             return updateRoom(registeredRoom.getString("_id"));
         }else{
-            System.out.println("Room "+room.getRoomId()+" is still up to date in Map, no need to update.");
+            Log.log(Level.INFO,this,"Room {0} is still up to date in Map, no update required.",room.getRoomId());
             RegistrationResult r = new RegistrationResult();
             r.type = RegistrationResult.Type.REGISTERED;
             r.registeredObject = registeredRoom;
@@ -383,11 +388,11 @@ public class RoomRegistrationHandler {
                 r.type = RegistrationResult.Type.REGISTERED;
                 r.registeredObject = registrationResponse;
                 
-                System.out.println("Sucessful registration/update operation against ("+id+")("+Constants.GAMEON_ID+")("+room.getRoomId()+") : "+regString);
+                Log.log(Level.INFO,this,"Sucessful registration/update operation against ({0})({1})({2}) : {3}",id,Constants.GAMEON_ID,room.getRoomId(),regString);
             } else {
                 String resp = response.readEntity(String.class);
-                System.out.println("Error registering room provider : " + room.getRoomName() + " : status code "
-                        + response.getStatus()+"\n"+ resp);
+
+                Log.log(Level.SEVERE, "Error registering room provider : {0} : status code {1}", room.getRoomName(), response.getStatus());
 
                 r.type = RegistrationResult.Type.NOT_REGISTERED;
                 

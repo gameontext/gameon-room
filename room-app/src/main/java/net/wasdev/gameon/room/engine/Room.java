@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
+import net.wasdev.gameon.room.Log;
 import net.wasdev.gameon.room.engine.meta.ContainerDesc;
 import net.wasdev.gameon.room.engine.meta.DoorDesc;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
@@ -164,8 +166,7 @@ public class Room {
             userMap.remove(id);
             this.roomEvent(u.username + " leaves the room.");
         } else {
-            System.out.println(
-                    "Unable to remove " + id + " from room " + roomDesc.id + " because user is not known to the room");
+            Log.log(Level.WARNING, this, "Unable to remove {0} from room {1} because user is not known to room", id,roomDesc.id);
         }
     }
 

@@ -18,6 +18,7 @@ package net.wasdev.gameon.room;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.logging.Level;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.CloseReason;
@@ -41,7 +42,7 @@ public class ConnectionUtils {
      */
     public static void broadcast(Collection<Session> activeSessions, String message, String msgDesc) {
         for (Session s : activeSessions) {
-            System.out.println("ROOM(" + msgDesc + "): sending to session " + s.getId() + " message:" + message);
+            Log.log(Level.INFO, s, "ROOM({0}): sending to session {1} message:{2}",msgDesc,s.getId(),message);
             sendMessage(s, message);
         }
     }
@@ -64,7 +65,7 @@ public class ConnectionUtils {
             } catch (IOException ioe) {
                 // An IOException, on the other hand, suggests the connection is
                 // in a bad state
-                System.out.println("Unexpected condition writing message: " + ioe);
+                Log.log(Level.WARNING, session, "Unexpected condition writing message", ioe);
                 tryToClose(session, new CloseReason(CloseCodes.UNEXPECTED_CONDITION, trimReason(ioe.toString())));
             }
         }
