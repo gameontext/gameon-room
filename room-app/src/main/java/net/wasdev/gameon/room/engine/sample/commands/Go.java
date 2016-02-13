@@ -39,6 +39,11 @@ public class Go extends CommandHandler {
             .unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[] { go })));
 
     @Override
+    public String getHelpText(){
+        return "Exit the room using the specified exit.";
+    }
+    
+    @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
     }
@@ -60,7 +65,7 @@ public class Go extends CommandHandler {
                 room.playerEvent(execBy, "You don't appear able to go " + e.exit.getDirection().toLongString(), null);
             }
         } else {
-            Log.log(Level.INFO, this, "Cannot process go command for user {0} as they are not known to the room", execBy);
+            Log.log(Level.WARNING, this, "Cannot process go command for user {0} as they are not known to the room", execBy);
         }
     }
 

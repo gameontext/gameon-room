@@ -36,6 +36,11 @@ public class Inventory extends CommandHandler {
             .unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[] { inventory })));
 
     @Override
+    public String getHelpText(){
+        return "List the items in your inventory.";
+    }
+    
+    @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
     }

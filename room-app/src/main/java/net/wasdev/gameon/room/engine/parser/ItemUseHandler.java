@@ -101,5 +101,9 @@ public abstract class ItemUseHandler extends CommandHandler {
             return t;
         }
     }
+    
+    public String getHelpText(){
+        return "This is an item use handler";
+    }
 
 }

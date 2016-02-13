@@ -34,6 +34,11 @@ public class Quit extends CommandHandler {
             .unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[] { quit })));
 
     @Override
+    public String getHelpText(){
+        return "Return to desktop.";
+    }
+    
+    @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
     }
