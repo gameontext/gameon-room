@@ -37,6 +37,11 @@ public class Drop extends CommandHandler {
             new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[] { dropItemInInventory })));
 
     @Override
+    public String getHelpText(){
+        return "Drops an item you are carrying.";
+    }
+    
+    @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
     }

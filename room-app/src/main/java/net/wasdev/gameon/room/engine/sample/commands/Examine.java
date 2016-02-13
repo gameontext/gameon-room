@@ -45,6 +45,11 @@ public class Examine extends CommandHandler {
             Arrays.asList(new CommandTemplate[] { examineInventoryItem, examineRoomItem, examineItemInContainer })));
 
     @Override
+    public String getHelpText(){
+        return "Examines an item in the room or your inventory.";
+    }
+    
+    @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
     }

@@ -43,12 +43,17 @@ public class Look extends CommandHandler {
     private static final CommandTemplate lookInContainerItem = new CommandTemplateBuilder().build(Type.VERB, "Look")
             .build(Type.LINKWORD, "IN").build(Type.CONTAINER_ITEM).build();
     private static final CommandTemplate lookAtItemInContainer = new CommandTemplateBuilder().build(Type.VERB, "Look")
-            .build(Type.LINKWORD, "IN").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build();
+            .build(Type.LINKWORD, "AT").build(Type.ITEM_INSIDE_CONTAINER_ITEM).build();
 
     private static final Set<CommandTemplate> templates = Collections
             .unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[] { look, lookAtRoomItem,
                     lookAtInventoryItem, lookInContainerItem, lookAtItemInContainer })));
 
+    @Override
+    public String getHelpText(){
+        return "Look at the room, **at** an item, or **in** a container.";
+    }
+    
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
@@ -75,8 +80,9 @@ public class Look extends CommandHandler {
                 }
                 Map<String,String> commands = new HashMap<String,String>();
                 for(CommandHandler ch : room.getCommands()){
-                    for(CommandTemplate ct : ch.getTemplates()){
-                        commands.put(ct.template.get(0).data, ct.key);
+                    if(!ch.isHidden()){
+                        String verb = ch.getTemplates().iterator().next().template.get(0).data.toLowerCase();
+                        commands.put(verb, ch.getHelpText());
                     }
                 }
                 room.locationEvent(execBy, room, room.getRoomDescription(), room.getExits(), roomItems, invItems,commands);

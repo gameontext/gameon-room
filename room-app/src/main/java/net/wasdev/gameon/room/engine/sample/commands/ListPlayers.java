@@ -38,6 +38,11 @@ public class ListPlayers extends CommandHandler {
             .unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[] { listPlayers })));
 
     @Override
+    public String getHelpText(){
+        return "List the players in the room.";
+    }
+    
+    @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
     }

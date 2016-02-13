@@ -29,7 +29,6 @@ import net.wasdev.gameon.room.engine.parser.CommandHandler;
 import net.wasdev.gameon.room.engine.sample.commands.Drop;
 import net.wasdev.gameon.room.engine.sample.commands.Examine;
 import net.wasdev.gameon.room.engine.sample.commands.Go;
-import net.wasdev.gameon.room.engine.sample.commands.Help;
 import net.wasdev.gameon.room.engine.sample.commands.Inventory;
 import net.wasdev.gameon.room.engine.sample.commands.ListPlayers;
 import net.wasdev.gameon.room.engine.sample.commands.Look;
@@ -42,7 +41,7 @@ import net.wasdev.gameon.room.engine.sample.items.Items;
 public class SampleDataProvider implements DataProvider {
 
     static List<CommandHandler> globalCommands = Arrays
-            .asList(new CommandHandler[] { new Drop(), new Examine(), new Go(), new Help(),
+            .asList(new CommandHandler[] { new Drop(), new Examine(), new Go(), 
                     new Inventory(), new ListPlayers(), new Look(), new Quit(), new Reset(), new Take(), new Use() });
 
     DoorDesc recRoomN = new DoorDesc(DoorDesc.Direction.NORTH,"A dark alleyway, with a Neon lit sign saying 'Rec Room', you can hear the feint sounds of a jukebox playing.");

@@ -42,6 +42,11 @@ public class Take extends CommandHandler {
             Arrays.asList(new CommandTemplate[] { takeItemInRoom, takeItemFromContainer, takeItemInInventory })));
 
     @Override
+    public String getHelpText(){
+        return "Pick up an item thats in the room, or take an item **from** a container";
+    }
+    
+    @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
     }

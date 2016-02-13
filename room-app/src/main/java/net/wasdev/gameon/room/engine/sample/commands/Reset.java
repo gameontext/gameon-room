@@ -35,6 +35,11 @@ public class Reset extends CommandHandler {
             .unmodifiableSet(new HashSet<CommandTemplate>(Arrays.asList(new CommandTemplate[] { reset })));
 
     @Override
+    public String getHelpText(){
+        return "Reset the room back to it's default state";
+    }
+    
+    @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
     }
