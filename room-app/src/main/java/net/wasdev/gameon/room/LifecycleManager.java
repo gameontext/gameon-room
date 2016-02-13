@@ -156,7 +156,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             
             JsonObjectBuilder commandJson = Json.createObjectBuilder();
             for (Entry<String, String> c : commands.entrySet()) {
-                commandJson.add(c.getKey().toUpperCase(), c.getValue());
+                commandJson.add(c.getKey(), c.getValue());
             }
             content.add("commands", commandJson.build());
             

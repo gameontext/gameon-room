@@ -160,7 +160,6 @@ public class RoomWS extends Endpoint {
             removePlayer(session, contents[2]);
             return;
         }
-        System.out.println("ERR: Unknown message type for room " + room.getRoomId() + " message:" + message);
         Log.log(Level.SEVERE, this, "Unknown Message Type {0} for room {1} message {2}", contents[0], room.getRoomId(),message);
     }
 
@@ -177,7 +176,7 @@ public class RoomWS extends Endpoint {
         } else {
             String username = Message.getValue(msg.get(Constants.USERNAME));
             if(username==null){
-                System.out.println("Recieved chat msg with missing username "+json);
+                Log.log(Level.WARNING, this, "Recieved chat msg with missing username : {0}", json);
                 username = userid;
             }
             // everything else is chat.
@@ -192,8 +191,8 @@ public class RoomWS extends Endpoint {
         String username = Message.getValue(msg.get(Constants.USERNAME));
         String userid = Message.getValue(msg.get(Constants.USERID));
 
-        System.out.println(
-                "*** Adding player " + userid + " from room " + room.getRoomId() + " via session " + session.getId());
+        Log.log(Level.INFO, this, "*** Adding player {0} from room {1} via session {2}", userid,room.getRoomId(),session.getId());
+        
         room.addUserToRoom(userid, username);
         room.command(userid, "look");
     }
@@ -201,8 +200,7 @@ public class RoomWS extends Endpoint {
     private void removePlayer(Session session, String json) throws IOException {
         JsonObject msg = Json.createReader(new StringReader(json)).readObject();
         String userid = Message.getValue(msg.get(Constants.USERID));
-        System.out.println("*** Removing player " + userid + " from room " + room.getRoomId() + " from session "
-                + session.getId());
+        Log.log(Level.INFO, this, "*** Removing player {0} from room {1} via session {2}", userid,room.getRoomId(),session.getId());
         room.removeUserFromRoom(userid);
     }
 

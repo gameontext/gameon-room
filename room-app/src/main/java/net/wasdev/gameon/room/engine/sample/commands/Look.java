@@ -82,7 +82,7 @@ public class Look extends CommandHandler {
                 for(CommandHandler ch : room.getCommands()){
                     if(!ch.isHidden()){
                         String verb = ch.getTemplates().iterator().next().template.get(0).data.toLowerCase();
-                        commands.put(verb, ch.getHelpText());
+                        commands.put("/"+verb, ch.getHelpText());
                     }
                 }
                 room.locationEvent(execBy, room, room.getRoomDescription(), room.getExits(), roomItems, invItems,commands);
