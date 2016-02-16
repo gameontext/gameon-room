@@ -22,7 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -66,8 +68,21 @@ public class RoomWS extends Endpoint {
 
     @Override
     public void onOpen(final Session session, EndpointConfig ec) {
-
         Log.log(Level.FINE,this, "onOpen called against room " + this.room.getRoomId());
+        
+        //send ack 
+        try{
+            JsonObjectBuilder ack = Json.createObjectBuilder();
+            JsonArrayBuilder versions = Json.createArrayBuilder();
+            versions.add(1);
+            ack.add("version", versions.build());
+            String msg = "ack," + ack.build().toString();
+            Log.log(Level.FINE, this, "ROOM(ack): sending to session {0} messsage {1}", session.getId(), msg);
+            session.getBasicRemote().sendText(msg);
+        }catch(IOException io){
+            Log.log(Level.WARNING, this, "Error sending ack",io);
+        }
+        
         if (srrp.activeSessions.size() == 0) {
             Log.log(Level.FINE,this, " No sessions known.");
         }
