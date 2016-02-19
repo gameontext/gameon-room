@@ -69,11 +69,11 @@ public class SampleDataProvider implements DataProvider {
     DoorDesc mugRoomW = new DoorDesc(DoorDesc.Direction.WEST,"A doorway that smells slightly of coffee");
 
     RoomDesc mugRoom = new RoomDesc("MugRoom", "The Room with The Mug",
-            "The room is rather clinical, and entirely white, in the center of the floor sits a lonely mug.", 
+            "The room is rather clinical, and entirely white, in the center of the floor sits a lonely mug. There is a sign on the wall here.", 
             new ItemDesc[] {Items.mug}, new DoorDesc[] { mugRoomS, mugRoomN, mugRoomE, mugRoomW });
 
     Collection<Room> rooms = new ArrayList<Room>(
-            Arrays.asList(new Room[] { new Room(bar, globalCommands), new Room(basement, globalCommands), }));
+            Arrays.asList(new Room[] { new Room(bar, globalCommands), new Room(basement, globalCommands), new Room(mugRoom, globalCommands)}));
 
     @Override
     public Collection<Room> getRooms() {
