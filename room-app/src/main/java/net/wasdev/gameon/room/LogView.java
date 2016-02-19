@@ -49,7 +49,7 @@ public class LogView extends HttpServlet {
                 count++;
             }
         } else {
-            System.out.println(" - Is empty, or not a directory." + "<br>");
+            out.println(" - Is empty, or not a directory." + "<br>");
         }
     }
 
@@ -115,9 +115,9 @@ public class LogView extends HttpServlet {
                                     if (outdir != null) {
                                         listFilesInDir(out, outdir, "o");
                                     }
-                                    String logdir = System.getenv("LOG_DIR");
+                                    String logdir = System.getenv("X_LOG_DIR");
                                     if (logdir != null) {
-                                        out.println("LOG_DIR: " + String.valueOf(logdir) + "<br>");
+                                        out.println("X_LOG_DIR: " + String.valueOf(logdir) + "<br>");
                                         listFilesInDir(out, logdir, "l");
 
                                         String ffdcDir = new File(new File(logdir), "ffdc").getAbsolutePath();
@@ -125,7 +125,7 @@ public class LogView extends HttpServlet {
                                         listFilesInDir(out, ffdcDir, "f");
                                     } else {
                                         // going to try default location..
-                                        out.println("LOG_DIR set as WLP_OUTPUT_DIR/defaultServer/logs" + "<br>");
+                                        out.println("X_LOG_DIR set as WLP_OUTPUT_DIR/defaultServer/logs" + "<br>");
                                         logdir = Paths.get(outdir, "defaultServer", "logs").toString();
                                         listFilesInDir(out, logdir, "l");
 
@@ -141,7 +141,7 @@ public class LogView extends HttpServlet {
                                             String outdir = System.getenv("WLP_OUTPUT_DIR");
                                             viewFile(out, outdir, choice.substring(1).trim());
                                         } else if (choice.startsWith("l")) {
-                                            String logdir = System.getenv("LOG_DIR");
+                                            String logdir = System.getenv("X_LOG_DIR");
                                             if (logdir == null) {
                                                 String outdir = System.getenv("WLP_OUTPUT_DIR");
                                                 logdir = Paths.get(outdir, "defaultServer", "logs").toString();
@@ -149,7 +149,7 @@ public class LogView extends HttpServlet {
                                             viewFile(out, logdir, choice.substring(1).trim());
                                         } else if (choice.startsWith("f")) {
 
-                                            String logdir = System.getenv("LOG_DIR");
+                                            String logdir = System.getenv("X_LOG_DIR");
                                             if (logdir == null) {
                                                 String outdir = System.getenv("WLP_OUTPUT_DIR");
                                                 logdir = Paths.get(outdir, "defaultServer", "logs").toString();

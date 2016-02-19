@@ -105,6 +105,6 @@ public class Stilettos extends ItemDesc {
     };
 
     public Stilettos() {
-        super("Stilettos", "A bright red pair of six inch stilleto heels.", true, true, useHandler);
+        super("Stilettos", "A bright red pair of six inch stiletto heels.", true, true, useHandler);
     }
 }
