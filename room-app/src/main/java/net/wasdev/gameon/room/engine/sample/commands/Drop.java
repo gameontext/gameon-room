@@ -58,6 +58,9 @@ public class Drop extends CommandHandler {
             Item i = (Item) command.args.get(0);
             room.getItems().add(i.item);
             u.inventory.remove(i.item);
+            if(i.item.clearStateOnDrop){
+                i.item.setState("");
+            }
             room.playerEvent(execBy, "You drop the " + i.item.name, u.username + " drops the " + i.item.name);
         }
     }
