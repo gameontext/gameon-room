@@ -27,4 +27,5 @@ public class Items {
     public static final ItemDesc jukebox = new JukeBox();
     public static final ItemDesc fuse = new Fuse();
     public static final ItemDesc cupboard = new Cupboard();
+    public static final ItemDesc mugRoomSign = new MugRoomSign();
 }
