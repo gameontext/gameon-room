@@ -161,6 +161,10 @@ public class Room {
                 this.roomDesc.items.add(item);
                 // remove from the user.
                 itemIter.remove();
+                // reset item state if needed
+                if(item.clearStateOnDrop){
+                    item.setState("");
+                }
                 this.playerEvent(id, "You drop the " + item.name, u.username + " drops the " + item.name);
             }
             userMap.remove(id);
@@ -213,6 +217,7 @@ public class Room {
         roomDesc.items.clear();
         roomDesc.items.addAll(roomDesc.defaultItems);
         for (ItemDesc item : roomDesc.items) {
+            item.setState("");
             if (item instanceof ContainerDesc) {
                 ContainerDesc box = (ContainerDesc) item;
                 box.items.clear();
