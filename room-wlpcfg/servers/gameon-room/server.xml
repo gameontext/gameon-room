@@ -22,6 +22,7 @@
 
     <!-- Our key that allows us to register rooms -->
     <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
+    <jndiEntry jndiName="registrationTokenRecRoom" value="${env.RECROOM_TOKEN}"/>
 
 	<logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
 

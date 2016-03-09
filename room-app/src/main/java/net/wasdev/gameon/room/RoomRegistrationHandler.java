@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright (c) 2015,2016 IBM Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package net.wasdev.gameon.room;
 
 import java.io.StringReader;
@@ -47,12 +62,12 @@ public class RoomRegistrationHandler {
         
         endPoint = System.getProperty(Constants.ENV_ROOM_SVC, System.getenv(Constants.ENV_ROOM_SVC));
         if (endPoint == null) {
-            throw new IllegalStateException("The location for the room service cold not be "
+            throw new IllegalStateException("The location for the room service could not be "
                     + "found in a system property or environment variable named : " + Constants.ENV_ROOM_SVC);
         }
         mapLocation = System.getProperty(Constants.ENV_MAP_SVC, System.getenv(Constants.ENV_MAP_SVC));
         if (mapLocation == null) {
-            throw new IllegalStateException("The location for the map service cold not be "
+            throw new IllegalStateException("The location for the map service could not be "
                     + "found in a system property or environment variable named : " + Constants.ENV_MAP_SVC);
         }
     }
@@ -236,53 +251,91 @@ public class RoomRegistrationHandler {
         room.setExits(exitMap);
     }
 
+    /**
+     * Gets a JSON string value from a named field.
+     * @param obj JSON object to extract the value from 
+     * @param name name of the field
+     * @return the field value or null if no match was found
+     */
+    private String getString(JsonObject obj, String name) {
+        try {
+            return obj.getString(name);
+        } catch (NullPointerException e) {
+            //this is thrown if there is no mapping to 'name', so return a null
+            return null;
+        }
+    }
+    
+    /**
+     * Some API model entries such as fullname, description and token are optional. This method allows
+     * for them to be equal, if both are missing or present with the same value.
+     * see RoomInfo for which model entries are optional.
+     * @return True if they are the same, false if not.
+     */
+    private boolean isOptionalEqual(String v1, String v2) {
+        if(v1 != v2) {  //this allows two null values to be equal or if v1 is the same object as v2
+            if(v1 == null) {
+                return false;   //v2 must have a value, so they can't match
+            }
+            if(!v1.equals(v2)) { //compare v1 and v2 using Java equality
+                return false;
+            }
+        } 
+        return true;    //they match !
+    }
+    
+    private boolean isRoomEqual(JsonObject info) {
+        if(info == null) {
+            return false;
+        }
+        if(!room.getRoomId().equals(getString(info, "name"))) {
+            return false;
+        }
+        if(!isOptionalEqual(room.getRoomName(), getString(info, "fullName"))) {
+            return false;
+        }
+        if(!isOptionalEqual(room.getRoomDescription(), getString(info, "description"))) {
+            return false;
+        }
+        if(!isOptionalEqual(room.getToken(), getString(info, "token"))) {
+            return false;
+        }
+        JsonObject doors = info.getJsonObject("doors");
+        int count = room.getDoors().size();
+        if(doors!=null && doors.size()==count){                
+            for(DoorDesc door : room.getDoors()){
+                String description = getString(doors, door.direction.toString().toLowerCase());
+                if((description != null) && description.equals(door.description)){
+                    count--;
+                }
+            }
+        } else {
+            Log.log(Level.INFO,this,"Door count mismatch.");
+            return false;
+        }
+        if(count != 0) {
+            Log.log(Level.INFO,this,"Doors content mismatch.");
+            return false;
+        }
+        //if all the doors matched.. lets check the connection details..
+        JsonObject connectionDetails = info.getJsonObject("connectionDetails");
+        if(connectionDetails!=null){
+             if(!"websocket".equals(connectionDetails.getString("type"))
+               || !getEndpointForRoom().equals(getString(connectionDetails, "target"))){
+                   Log.log(Level.INFO,this,"ConnectionDetails mismatch.");
+                   return false;                 
+             }
+        }else{
+           Log.log(Level.INFO,this,"ConnectionDetails absent.");
+           return false;
+        }
+        return true;
+    }
+    
     private RegistrationResult compareRoomAndUpdateIfRequired(JsonObject registeredRoom) throws Exception{
         JsonObject info = registeredRoom.getJsonObject("info");
         
-        boolean needsUpdate = true;
-        if(   room.getRoomId().equals(info.getString("name"))
-           && room.getRoomName().equals(info.getString("fullName"))
-           && room.getRoomDescription().equals(info.getString("description"))
-                )
-        {
-            //all good so far =)
-            JsonObject doors = info.getJsonObject("doors");
-            int count = room.getDoors().size();
-            if(doors!=null && doors.size()==count){                
-                for(DoorDesc door : room.getDoors()){
-                    String description = doors.getString(door.direction.toString().toLowerCase());
-                    if(description.equals(door.description)){
-                        count--;
-                    }
-                }
-            }else{
-                Log.log(Level.INFO,this,"Door count mismatch.");
-            }
-            //if all the doors matched.. lets check the connection details..
-            if(count==0){
-                JsonObject connectionDetails = info.getJsonObject("connectionDetails");
-                if(connectionDetails!=null){
-                    if("websocket".equals(connectionDetails.getString("type"))
-                       && getEndpointForRoom().equals(connectionDetails.getString("target"))){
-                        
-                        //all good.. no need to update this one.
-                        needsUpdate = false;
-                        
-                    }else{
-                        Log.log(Level.INFO,this,"ConnectionDetails mismatch.");
-                    }
-                }else{
-                    Log.log(Level.INFO,this,"ConnectionDetails absent.");
-                }
-            }else{
-                Log.log(Level.INFO,this,"Doors content mismatch.");
-            }
-        }else{
-            Log.log(Level.INFO,this,"Basic room compare failed.");
-        }
-        
-        if(needsUpdate){         
-            System.out.println("Update required for "+room.getRoomId());
+        if(!isRoomEqual(info)){         
             Log.log(Level.INFO,this,"Update required for {0}",room.getRoomId());
             return updateRoom(registeredRoom.getString("_id"));
         }else{
@@ -319,6 +372,9 @@ public class RoomRegistrationHandler {
         registrationPayload.add("name", room.getRoomId());
         registrationPayload.add("fullName", room.getRoomName());
         registrationPayload.add("description", room.getRoomDescription());
+        if((room.getToken() != null) && !room.getToken().isEmpty()) {
+            registrationPayload.add("token", room.getToken());
+        }
         // add the doorway descriptions we'd like the game to use if it
         // wires us to other rooms.
         JsonObjectBuilder doors = Json.createObjectBuilder();

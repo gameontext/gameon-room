@@ -28,6 +28,7 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   export service_map=$(etcdctl get /map/url)
   export service_room=$(etcdctl get /room/service)
   export MAP_KEY=$(etcdctl get /passwords/map-key)
+  export RECROOM_TOKEN=$(etcdctl get /passwords/recroom-token)
   export LOGSTASH_ENDPOINT=$(etcdctl get /logstash/endpoint)
 
   # Softlayer needs a logstash endpoint so we set up the server

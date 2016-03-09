@@ -38,10 +38,13 @@ import net.wasdev.gameon.room.engine.Room;
  */
 public class RoomWS extends Endpoint {
     private final Room room;
+    private boolean isRoomAuthorised = false;
+    
     private final LifecycleManager.SessionRoomResponseProcessor srrp;
 
     public RoomWS(Room room, LifecycleManager.SessionRoomResponseProcessor srrp) {
         this.room = room;
+        isRoomAuthorised = !room.hasToken();
         this.srrp = srrp;
     }
 
@@ -65,11 +68,8 @@ public class RoomWS extends Endpoint {
             }
         }
     }
-
-    @Override
-    public void onOpen(final Session session, EndpointConfig ec) {
-        Log.log(Level.FINE,this, "onOpen called against room " + this.room.getRoomId());
-        
+    
+    private void sendAck(final Session session) {
         //send ack 
         try{
             JsonObjectBuilder ack = Json.createObjectBuilder();
@@ -82,7 +82,9 @@ public class RoomWS extends Endpoint {
         }catch(IOException io){
             Log.log(Level.WARNING, this, "Error sending ack",io);
         }
-        
+    }
+    
+    private void configureSession(final Session session) {
         if (srrp.activeSessions.size() == 0) {
             Log.log(Level.FINE,this, " No sessions known.");
         }
@@ -129,7 +131,17 @@ public class RoomWS extends Endpoint {
                 mhc++;
             }
         }
+    }
 
+    @Override
+    public void onOpen(final Session session, EndpointConfig ec) {
+        Log.log(Level.FINE,this, "onOpen called against room " + this.room.getRoomId());
+        
+        if(!room.hasToken()) {
+            //no auth token specified, so immediately respond with ack 
+            sendAck(session);
+        } //otherwise we are going to wait until we get the room init
+        configureSession(session);
     }
 
     @Override
@@ -163,6 +175,23 @@ public class RoomWS extends Endpoint {
     public void receiveMessage(String message, Session session) throws IOException {
         Log.log(Level.FINE, this, "ROOMX: [{0}:{1}] sess[{2}:{3}] : {4}", this.hashCode(),this.room.getRoomId(),session.hashCode(),session.getId(),message);
         String[] contents = Message.splitRouting(message);
+        if (contents[0].equals("roomInit")) {
+            if(room.hasToken()) {
+                if(isTokenValid(contents[2])) {
+                    Log.log(Level.INFO, this, "Token valid - starting WS connection");
+                    isRoomAuthorised = true;
+                    sendAck(session);
+                } else {
+                    session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Invalid token"));
+                    Log.log(Level.WARNING, this, "Token invalid - closing WS connection");
+                }
+            }
+            return;
+        }
+        if(!isRoomAuthorised) {
+            session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Unauthorised room access"));
+            Log.log(Level.WARNING, this, "Token invalid - closing WS connection");
+        }
         if (contents[0].equals("roomHello")) {
             addNewPlayer(session, contents[2]);
             return;
@@ -175,9 +204,17 @@ public class RoomWS extends Endpoint {
             removePlayer(session, contents[2]);
             return;
         }
+
         Log.log(Level.SEVERE, this, "Unknown Message Type {0} for room {1} message {2}", contents[0], room.getRoomId(),message);
     }
 
+    //process the room initialisation
+    private boolean isTokenValid(String json) {
+        JsonObject msg = Json.createReader(new StringReader(json)).readObject();
+        String content = Message.getValue(msg.get("token"));
+        return room.getToken().equals(content);
+    }
+    
     // process a command
     private void processCommand(Session session, String json) throws IOException {
         Log.log(Level.FINE,this, "Command received from the user, " + this);

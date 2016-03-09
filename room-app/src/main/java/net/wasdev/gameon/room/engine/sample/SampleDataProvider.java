@@ -19,7 +19,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 
+import net.wasdev.gameon.room.Log;
 import net.wasdev.gameon.room.engine.DataProvider;
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.meta.DoorDesc;
@@ -72,8 +74,18 @@ public class SampleDataProvider implements DataProvider {
             "The room is rather clinical, and entirely white, in the center of the floor sits a lonely mug. There is a sign on the wall here.", 
             new ItemDesc[] {Items.mug, Items.mugRoomSign}, new DoorDesc[] { mugRoomS, mugRoomN, mugRoomE, mugRoomW });
 
-    Collection<Room> rooms = new ArrayList<Room>(
-            Arrays.asList(new Room[] { new Room(bar, globalCommands), new Room(basement, globalCommands), new Room(mugRoom, globalCommands)}));
+    Collection<Room> rooms = new ArrayList<Room>();
+    RoomDesc[] descriptions = new RoomDesc[]{bar, basement, mugRoom};
+    
+    public SampleDataProvider() {
+        for(RoomDesc desc : descriptions) {
+            try {
+                rooms.add(new Room(desc, globalCommands));
+            } catch (Exception e) {
+                Log.log(Level.WARNING, this, "Registration failed for room {0}.", desc.id);
+            }
+        }
+    }
 
     @Override
     public Collection<Room> getRooms() {

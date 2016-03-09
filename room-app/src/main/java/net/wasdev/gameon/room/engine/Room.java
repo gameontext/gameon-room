@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 IBM Corp.
+ * Copyright (c) 2015,2016 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -21,9 +21,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 import net.wasdev.gameon.room.Log;
 import net.wasdev.gameon.room.engine.meta.ContainerDesc;
@@ -35,6 +39,7 @@ import net.wasdev.gameon.room.engine.parser.CommandHandler;
 import net.wasdev.gameon.room.engine.parser.CommandTemplate;
 
 public class Room {
+    private String token = null;       //registration token for validating connections
     
     Map<String, ExitDesc> exitMap;
     
@@ -105,6 +110,19 @@ public class Room {
                 CommandTemplate.ParseNode verb = t.template.get(0);
                 commandMap.put(verb.data.toUpperCase(), c);
             }
+        }
+        //now see if there is a token for this room to register with
+        try {
+            token = (String) new InitialContext().lookup("registrationToken" + roomDesc.id);
+            if((token == null) || token.isEmpty()) {
+                //we found a blank JNDI entry where we expected a token so treat this as an error
+                Log.log(Level.WARNING, this, "Registration token configured but NOT found for room {0}.", roomDesc.id);
+            } else {
+                Log.log(Level.INFO, this, "Registration token found for room {0}.", roomDesc.id);
+            }
+        } catch (NamingException e) {
+            // there is no token set so carry on
+            Log.log(Level.INFO, this, "No registration token for room {0}.", roomDesc.id);
         }
     }
 
@@ -234,5 +252,13 @@ public class Room {
         Map<String,ExitDesc> exits = new HashMap<String,ExitDesc>();
         exits.putAll(exitMap);
         this.exitMap = Collections.unmodifiableMap(exits);        
+    }
+    
+    public String getToken() {
+        return token;
+    }
+    
+    public boolean hasToken() {
+        return (token != null) && !token.isEmpty();
     }
 }

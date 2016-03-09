@@ -2,6 +2,10 @@ apply plugin: 'java'
 apply plugin: 'eclipse-wtp'
 sourceCompatibility = 1.8
 
+dependencies {
+    compile group:'io.jsonwebtoken', name:'jjwt', version:'0.5.1'
+}
+
 // Add additional code conventions
 eclipse.jdt.file {
     withProperties {
