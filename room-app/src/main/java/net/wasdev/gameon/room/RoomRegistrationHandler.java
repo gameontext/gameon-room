@@ -33,7 +33,7 @@ import net.wasdev.gameon.room.engine.meta.ExitDesc;
 
 public class RoomRegistrationHandler {
 
-    
+    private final String id;
     private final String secret;
     private final String endPoint;
     private final String mapLocation;
@@ -41,7 +41,8 @@ public class RoomRegistrationHandler {
     AtomicBoolean handling503 = new AtomicBoolean(false);
     
     
-    RoomRegistrationHandler(Room room, String secret){
+    RoomRegistrationHandler(Room room, String id, String secret){
+        this.id=id;
         this.room=room;
         this.secret=secret;
         
@@ -73,14 +74,13 @@ public class RoomRegistrationHandler {
         try {
             Client queryClient = ClientBuilder.newClient();
 
-            // add our shared secret so all our queries come from the
-            // game-on.org id
-            queryClient.register(new GameOnHeaderAuthFilter(Constants.GAMEON_ID, secret));
+            // add our shared secret 
+            queryClient.register(new GameOnHeaderAuthFilter(id, secret));
 
             // create the jax-rs 2.0 client
             WebTarget queryRoot = queryClient.target(mapLocation);
             // add the lookup arg for this room..
-            WebTarget target = queryRoot.queryParam("owner", Constants.GAMEON_ID).queryParam("name", room.getRoomId());
+            WebTarget target = queryRoot.queryParam("owner", id).queryParam("name", room.getRoomId());
             Response r = null;
 
             r = target.request(MediaType.APPLICATION_JSON).get(); // .accept(MediaType.APPLICATION_JSON).get();
@@ -102,17 +102,17 @@ public class RoomRegistrationHandler {
                     JsonObject queryResponse = resp.getJsonObject(0);
                     
                     //get the id for our already-registered room.
-                    String id = queryResponse.getString("_id");
+                    String roomId = queryResponse.getString("_id");
                     
                     // now we have our id.. make a new request to get our exit wirings.. 
                     queryClient = ClientBuilder.newClient();
-                    queryClient.register(new GameOnHeaderAuthFilter(Constants.GAMEON_ID, secret));
+                    queryClient.register(new GameOnHeaderAuthFilter(id, secret));
                     WebTarget lookup = queryClient.target(mapLocation);
-                    Invocation.Builder builder = lookup.path("{roomId}").resolveTemplate("roomId", id).request(MediaType.APPLICATION_JSON);
+                    Invocation.Builder builder = lookup.path("{roomId}").resolveTemplate("roomId", roomId).request(MediaType.APPLICATION_JSON);
                     Response response = builder.get();
                     respString = response.readEntity(String.class);    
                     
-                    Log.log(Level.FINE, this, "EXISTING_INFO({0})({1}):{2}", Constants.GAMEON_ID, room.getRoomId(), respString);
+                    Log.log(Level.FINE, this, "EXISTING_INFO({0})({1}):{2}", id, room.getRoomId(), respString);
                     
                     reader = Json.createReader(new StringReader(respString));                    
                     queryResponse = reader.readObject();
@@ -298,17 +298,17 @@ public class RoomRegistrationHandler {
         return registerOrUpdateRoom(Mode.REGISTER, null);
     }
     
-    private RegistrationResult updateRoom(String id) throws Exception{
-        return registerOrUpdateRoom(Mode.UPDATE, id);
+    private RegistrationResult updateRoom(String roomId) throws Exception{
+        return registerOrUpdateRoom(Mode.UPDATE, roomId);
     }
     
     enum Mode {REGISTER,UPDATE};
-    private RegistrationResult registerOrUpdateRoom(Mode mode, String id) throws Exception{
+    private RegistrationResult registerOrUpdateRoom(Mode mode, String roomId) throws Exception{
         Client postClient = ClientBuilder.newClient();
 
         // add our shared secret so all our queries come from the
         // game-on.org id
-        postClient.register(new GameOnHeaderAuthInterceptor(Constants.GAMEON_ID, secret));
+        postClient.register(new GameOnHeaderAuthInterceptor(id, secret));
         
         // create the jax-rs 2.0 client
         WebTarget root = postClient.target(mapLocation);  
@@ -370,7 +370,7 @@ public class RoomRegistrationHandler {
                 break;
             }
             case UPDATE:{
-                Invocation.Builder builder = root.path("{roomId}").resolveTemplate("roomId", id).request(MediaType.APPLICATION_JSON);
+                Invocation.Builder builder = root.path("{roomId}").resolveTemplate("roomId", roomId).request(MediaType.APPLICATION_JSON);
                 response = builder.put(Entity.json(registrationPayload.build().toString()));
                 break;
             }
@@ -388,7 +388,7 @@ public class RoomRegistrationHandler {
                 r.type = RegistrationResult.Type.REGISTERED;
                 r.registeredObject = registrationResponse;
                 
-                Log.log(Level.INFO,this,"Sucessful registration/update operation against ({0})({1})({2}) : {3}",id,Constants.GAMEON_ID,room.getRoomId(),regString);
+                Log.log(Level.INFO,this,"Sucessful registration/update operation against ({0})({1})({2}) : {3}",roomId,id,room.getRoomId(),regString);
             } else {
                 String resp = response.readEntity(String.class);
 

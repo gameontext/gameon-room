@@ -33,7 +33,6 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.servlet.ServletException;
 import javax.websocket.Endpoint;
 import javax.websocket.Session;
 import javax.websocket.server.ServerApplicationConfig;
@@ -49,6 +48,7 @@ import net.wasdev.gameon.room.engine.Room;
 public class LifecycleManager implements ServerApplicationConfig {
 
     private String registrationSecret;
+    private String systemId;
 
     Engine e = Engine.getEngine();
 
@@ -218,10 +218,11 @@ public class LifecycleManager implements ServerApplicationConfig {
     private void getConfig() {
         try {
             registrationSecret = (String) new InitialContext().lookup("registrationSecret");
+            systemId = (String) new InitialContext().lookup("systemId");
         } catch (NamingException e) {
         }
-        if (registrationSecret == null) {
-            throw new IllegalStateException("registrationSecret was not found, check server.xml/server.env");
+        if (registrationSecret == null || systemId == null) {
+            throw new IllegalStateException("registrationSecret("+String.valueOf(registrationSecret)+") or systemid("+String.valueOf(systemId)+") was not found, check server.xml/server.env");
         }
     }
 
@@ -248,7 +249,7 @@ public class LifecycleManager implements ServerApplicationConfig {
         Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
         for (Room room : rooms) {
             
-            RoomRegistrationHandler roomRegistration = new RoomRegistrationHandler(room, registrationSecret);
+            RoomRegistrationHandler roomRegistration = new RoomRegistrationHandler(room, systemId, registrationSecret);
             try{
                 roomRegistration.performRegistration();
             }catch(Exception e){
