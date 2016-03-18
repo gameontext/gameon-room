@@ -36,12 +36,11 @@ import net.wasdev.gameon.room.engine.parser.CommandTemplate;
 
 public class Room {
     
-    Map<String, ExitDesc> exitMap;
-    
-    RoomDesc roomDesc;
-
-    Map<String, User> userMap = new ConcurrentHashMap<String, User>();
-    Map<String, CommandHandler> commandMap = new HashMap<String, CommandHandler>();
+    private Map<String, ExitDesc> exitMap;    
+    private RoomDesc roomDesc;
+    private Map<String, User> userMap = new ConcurrentHashMap<String, User>();
+    private Map<String, CommandHandler> commandMap = new HashMap<String, CommandHandler>();    
+    private Room.RoomResponseProcessor rrp = new DebugResponseProcessor();
 
     public interface RoomResponseProcessor {
         // "Player message :: from("+senderId+")
@@ -95,8 +94,6 @@ public class Room {
             System.out.println("Exit succeeded : " + m + " to " + id);
         }
     }
-
-    private Room.RoomResponseProcessor rrp = new DebugResponseProcessor();
 
     public Room(RoomDesc r, List<CommandHandler> globalCommands) {
         roomDesc = r;
@@ -235,4 +232,5 @@ public class Room {
         exits.putAll(exitMap);
         this.exitMap = Collections.unmodifiableMap(exits);        
     }
+    
 }

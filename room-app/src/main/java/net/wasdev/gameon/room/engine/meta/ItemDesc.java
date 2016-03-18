@@ -20,13 +20,13 @@ import net.wasdev.gameon.room.engine.parser.ItemUseHandler;
 
 public class ItemDesc {
     public final String name;
-    private final String description;
     public final boolean takeable;
     public final boolean clearStateOnDrop;
+    public final ItemUseHandler useHandler;
+    
     private String state = "";
     private final Object stateMonitor = new Object();
-
-    public final ItemUseHandler useHandler;
+    private final String description;
 
     public interface ItemDescriptionHandler {
         public String getDescription(ItemDesc item, String execBy, String cmd, Room room);

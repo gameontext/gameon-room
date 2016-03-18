@@ -40,6 +40,7 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import net.wasdev.gameon.room.engine.Engine;
 import net.wasdev.gameon.room.engine.Room;
+import net.wasdev.gameon.room.engine.Room.RoomResponseProcessor;
 
 /**
  * Manages the registration of all rooms in the Engine with the concierge
@@ -50,11 +51,12 @@ public class LifecycleManager implements ServerApplicationConfig {
     private String registrationSecret;
     private String systemId;
 
-    Engine e = Engine.getEngine();
+    private Engine e = Engine.getEngine();
 
     public static class SessionRoomResponseProcessor
-            implements net.wasdev.gameon.room.engine.Room.RoomResponseProcessor {
-        AtomicInteger counter = new AtomicInteger(0);
+            implements RoomResponseProcessor {
+        private Collection<Session> activeSessions = new CopyOnWriteArraySet<Session>();
+        private AtomicInteger counter = new AtomicInteger(0);
 
         private void generateEvent(Session session, JsonObject content, String userID, boolean selfOnly, int bookmark)
                 throws IOException {
@@ -116,7 +118,7 @@ public class LifecycleManager implements ServerApplicationConfig {
                 try {
                     generateRoomEvent(session, json, count);
                 } catch (IOException io) {
-                    throw new RuntimeException(io);
+                    throw new IllegalStateException(io);
                 }
             }
         }
@@ -134,7 +136,7 @@ public class LifecycleManager implements ServerApplicationConfig {
                     Log.log(Level.FINE, this, "ROOM(CE): sending to session {0} messsage {1}", session.getId(), cmsg);
                     session.getBasicRemote().sendText(cmsg);
                 } catch (IOException io) {
-                    throw new RuntimeException(io);
+                    throw new IllegalStateException(io);
                 }
             }
         }
@@ -204,14 +206,16 @@ public class LifecycleManager implements ServerApplicationConfig {
             }
         }
 
-        Collection<Session> activeSessions = new CopyOnWriteArraySet<Session>();
-
         public void addSession(Session s) {
             activeSessions.add(s);
         }
 
         public void removeSession(Session s) {
             activeSessions.remove(s);
+        }
+        
+        public Collection<Session> getSessions() {
+            return activeSessions;
         }
     }
 

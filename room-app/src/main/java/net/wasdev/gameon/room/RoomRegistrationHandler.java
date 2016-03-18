@@ -38,7 +38,7 @@ public class RoomRegistrationHandler {
     private final String endPoint;
     private final String mapLocation;
     private final Room room;
-    AtomicBoolean handling503 = new AtomicBoolean(false);
+    private AtomicBoolean handling503 = new AtomicBoolean(false);
     
     
     RoomRegistrationHandler(Room room, String id, String secret){
@@ -122,9 +122,7 @@ public class RoomRegistrationHandler {
                     result.registeredObject = queryResponse;
                     return result;
                 }
-                case 404: {
-                    // fall through to 503.
-                }
+                case 404:// fall through to 503.
                 case 503: {
                     // service was unavailable.. we need to reschedule ourselves
                     // to try again later..
@@ -206,7 +204,7 @@ public class RoomRegistrationHandler {
                 return false;
             }
             default:{
-                throw new RuntimeException("Unknown enum value "+existingRegistration.type.toString());
+                throw new IllegalStateException("Unknown enum value "+existingRegistration.type.toString());
             }               
         }
     }
@@ -349,7 +347,7 @@ public class RoomRegistrationHandler {
                     break;
                 }
                 default:{
-                    throw new RuntimeException("Bad enum value "+door.direction);
+                    throw new IllegalStateException("Bad enum value "+door.direction);
                 }
             }
         }
@@ -374,6 +372,9 @@ public class RoomRegistrationHandler {
                 response = builder.put(Entity.json(registrationPayload.build().toString()));
                 break;
             }
+            default:{
+                throw new IllegalStateException("Bad enum value "+mode.name());
+            }
         }
         
         RegistrationResult r = new RegistrationResult();
@@ -392,7 +393,7 @@ public class RoomRegistrationHandler {
             } else {
                 String resp = response.readEntity(String.class);
 
-                Log.log(Level.SEVERE, "Error registering room provider : {0} : status code {1}", room.getRoomName(), response.getStatus());
+                Log.log(Level.SEVERE, "Error registering room provider : {0} : status code {1} : response {2}", room.getRoomName(), response.getStatus(), String.valueOf(resp));
 
                 r.type = RegistrationResult.Type.NOT_REGISTERED;
                 
