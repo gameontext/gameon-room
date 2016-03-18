@@ -26,15 +26,7 @@ import javax.ws.rs.core.MediaType;
 public class LogView extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
-    public LogView() {
-        super();
-        // TODO Auto-generated constructor stub
-    }
-
-    public void listFilesInDir(PrintWriter out, String dir, String prefix) {
+    private void listFilesInDir(PrintWriter out, String dir, String prefix) {
         File f = new File(dir);
         if (f.list() != null) {
             long count = 0;
@@ -53,7 +45,7 @@ public class LogView extends HttpServlet {
         }
     }
 
-    public void viewFile(PrintWriter out, String dir, String countString) {
+    private void viewFile(PrintWriter out, String dir, String countString) {
         File f = new File(dir);
         if (f.list() != null) {
             long count = 0;
@@ -71,6 +63,65 @@ public class LogView extends HttpServlet {
             }
         } else {
             out.println("Directory does not exist to view file from.");
+        }
+    }
+    
+
+    private void processViewCommand(HttpServletRequest request, HttpServletResponse response, PrintWriter out)
+            throws IOException {
+        response.addHeader("Content-Type", MediaType.TEXT_PLAIN);
+        String choice = request.getParameter("choice");
+        if (choice != null) {
+            if (choice.startsWith("o")) {
+                String outdir = System.getenv("WLP_OUTPUT_DIR");
+                viewFile(out, outdir, choice.substring(1).trim());
+            } else if (choice.startsWith("l")) {
+                String logdir = System.getenv("X_LOG_DIR");
+                if (logdir == null) {
+                    String outdir = System.getenv("WLP_OUTPUT_DIR");
+                    logdir = Paths.get(outdir, "defaultServer", "logs").toString();
+                }
+                viewFile(out, logdir, choice.substring(1).trim());
+            } else if (choice.startsWith("f")) {
+
+                String logdir = System.getenv("X_LOG_DIR");
+                if (logdir == null) {
+                    String outdir = System.getenv("WLP_OUTPUT_DIR");
+                    logdir = Paths.get(outdir, "defaultServer", "logs").toString();
+                }
+                String ffdcDir = new File(new File(logdir), "ffdc").getAbsolutePath();
+                viewFile(out, ffdcDir, choice.substring(1).trim());
+            }
+        } else {
+            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    "view cmd requires choice param");
+        }
+    }
+
+    private void processListCommand(HttpServletResponse response, PrintWriter out) {
+        response.addHeader("Content-Type", MediaType.TEXT_HTML);
+        String outdir = System.getenv("WLP_OUTPUT_DIR");
+        out.println("WLP_OUTPUT_DIR: " + String.valueOf(outdir) + "<br>");
+        if (outdir != null) {
+            listFilesInDir(out, outdir, "o");
+        }
+        String logdir = System.getenv("X_LOG_DIR");
+        if (logdir != null) {
+            out.println("X_LOG_DIR: " + String.valueOf(logdir) + "<br>");
+            listFilesInDir(out, logdir, "l");
+
+            String ffdcDir = new File(new File(logdir), "ffdc").getAbsolutePath();
+            out.println("FFDC_DIR: " + String.valueOf(logdir) + "<br>");
+            listFilesInDir(out, ffdcDir, "f");
+        } else {
+            // going to try default location..
+            out.println("X_LOG_DIR set as WLP_OUTPUT_DIR/defaultServer/logs" + "<br>");
+            logdir = Paths.get(outdir, "defaultServer", "logs").toString();
+            listFilesInDir(out, logdir, "l");
+
+            String ffdcDir = new File(new File(logdir), "ffdc").getAbsolutePath();
+            out.println("FFDC_DIR: " + String.valueOf(ffdcDir) + "<br>");
+            listFilesInDir(out, ffdcDir, "f");
         }
     }
 
@@ -109,58 +160,9 @@ public class LogView extends HttpServlet {
                                 PrintWriter out = response.getWriter();
                                 
                                 if ("list".equals(cmd)) {
-                                    response.addHeader("Content-Type", MediaType.TEXT_HTML);
-                                    String outdir = System.getenv("WLP_OUTPUT_DIR");
-                                    out.println("WLP_OUTPUT_DIR: " + String.valueOf(outdir) + "<br>");
-                                    if (outdir != null) {
-                                        listFilesInDir(out, outdir, "o");
-                                    }
-                                    String logdir = System.getenv("X_LOG_DIR");
-                                    if (logdir != null) {
-                                        out.println("X_LOG_DIR: " + String.valueOf(logdir) + "<br>");
-                                        listFilesInDir(out, logdir, "l");
-
-                                        String ffdcDir = new File(new File(logdir), "ffdc").getAbsolutePath();
-                                        out.println("FFDC_DIR: " + String.valueOf(logdir) + "<br>");
-                                        listFilesInDir(out, ffdcDir, "f");
-                                    } else {
-                                        // going to try default location..
-                                        out.println("X_LOG_DIR set as WLP_OUTPUT_DIR/defaultServer/logs" + "<br>");
-                                        logdir = Paths.get(outdir, "defaultServer", "logs").toString();
-                                        listFilesInDir(out, logdir, "l");
-
-                                        String ffdcDir = new File(new File(logdir), "ffdc").getAbsolutePath();
-                                        out.println("FFDC_DIR: " + String.valueOf(ffdcDir) + "<br>");
-                                        listFilesInDir(out, ffdcDir, "f");
-                                    }
+                                    processListCommand(response, out);
                                 } else if ("view".equals(cmd)) {
-                                    response.addHeader("Content-Type", MediaType.TEXT_PLAIN);
-                                    String choice = request.getParameter("choice");
-                                    if (choice != null) {
-                                        if (choice.startsWith("o")) {
-                                            String outdir = System.getenv("WLP_OUTPUT_DIR");
-                                            viewFile(out, outdir, choice.substring(1).trim());
-                                        } else if (choice.startsWith("l")) {
-                                            String logdir = System.getenv("X_LOG_DIR");
-                                            if (logdir == null) {
-                                                String outdir = System.getenv("WLP_OUTPUT_DIR");
-                                                logdir = Paths.get(outdir, "defaultServer", "logs").toString();
-                                            }
-                                            viewFile(out, logdir, choice.substring(1).trim());
-                                        } else if (choice.startsWith("f")) {
-
-                                            String logdir = System.getenv("X_LOG_DIR");
-                                            if (logdir == null) {
-                                                String outdir = System.getenv("WLP_OUTPUT_DIR");
-                                                logdir = Paths.get(outdir, "defaultServer", "logs").toString();
-                                            }
-                                            String ffdcDir = new File(new File(logdir), "ffdc").getAbsolutePath();
-                                            viewFile(out, ffdcDir, choice.substring(1).trim());
-                                        }
-                                    } else {
-                                        ((HttpServletResponse) response).sendError(HttpServletResponse.SC_BAD_REQUEST,
-                                                "view cmd requires choice param");
-                                    }
+                                    processViewCommand(request, response, out);
                                 } else {
                                     response.addHeader("Content-Type", MediaType.TEXT_HTML);
                                     out.println("<center><h1>Welcome to LogView.</h1></center>"
@@ -193,7 +195,6 @@ public class LogView extends HttpServlet {
      */
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO Auto-generated method stub
         doGet(request, response);
     }
 

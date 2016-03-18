@@ -27,14 +27,13 @@ import net.wasdev.gameon.room.engine.parser.ItemUseHandler;
 public class ContainerDesc extends ItemDesc {
     public final Collection<ItemDesc> items;
     public final Collection<ItemDesc> defaultItems;
+    public final ContainerDesc.AccessVerificationHandler access;
 
     // if you can't access the container, you don't get to know whats in it.
     // it may be out of reach, closed, or locked.
     public interface AccessVerificationHandler {
         public boolean verifyAccess(ItemDesc item, String execBy, Room room);
     }
-
-    public final ContainerDesc.AccessVerificationHandler access;
 
     public ContainerDesc(String name, String description, boolean takeable, boolean clearStateOnDrop, ItemDesc[] items,
             ContainerDesc.AccessVerificationHandler access, ItemUseHandler handler,

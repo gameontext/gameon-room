@@ -26,15 +26,15 @@ public abstract class CommandHandler {
 
         private void addArg(Node.Type type, String arg) {
             if (args.isEmpty() && type != Node.Type.VERB) {
-                throw new RuntimeException("Commands must start with a verb");
+                throw new IllegalArgumentException("Commands must start with a verb");
             }
             switch (type) {
                 case VERB:
                     if (!args.isEmpty())
-                        throw new RuntimeException("Verb can only be used as initial node type");
+                        throw new IllegalArgumentException("Verb can only be used as initial node type");
                 case LINKWORD:
                     if (arg.contains(":") || arg.contains("/"))
-                        throw new RuntimeException("Verb and linkword cannot contain character : or /");
+                        throw new IllegalArgumentException("Verb and linkword cannot contain character : or /");
                 default:
             }
 
@@ -53,7 +53,7 @@ public abstract class CommandHandler {
                 case CONTAINER_ITEM:
                 case ITEM_INSIDE_CONTAINER_ITEM:
                     if (arg != null)
-                        throw new RuntimeException("No string  argument can be supplied for type " + type.name());
+                        throw new IllegalArgumentException("No string  argument can be supplied for type " + type.name());
                 default:
             }
             addArg(type, arg);
@@ -64,7 +64,7 @@ public abstract class CommandHandler {
             switch (type) {
                 case VERB:
                 case LINKWORD:
-                    throw new RuntimeException("Verb and linkword must be built with the string as an argument");
+                    throw new IllegalArgumentException("Verb and linkword must be built with the string as an argument");
                 default:
             }
             return build(type, null);
@@ -100,7 +100,7 @@ public abstract class CommandHandler {
                         sb.append("/L:" + n.data.trim().toUpperCase());
                         break;
                     default:
-                        throw new RuntimeException("Unknown node type in Command Template " + n.type.name());
+                        throw new IllegalStateException("Unknown node type in Command Template " + n.type.name());
                 }
             }
             CommandTemplate t = new CommandTemplate(sb.toString(), args);

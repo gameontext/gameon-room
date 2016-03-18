@@ -39,13 +39,12 @@ import net.wasdev.gameon.room.engine.Room;
 public class RoomWS extends Endpoint {
     private final Room room;
     private final LifecycleManager.SessionRoomResponseProcessor srrp;
-
+    private Map<Session, MessageHandler.Whole<String>> handlersBySession = new ConcurrentHashMap<Session, MessageHandler.Whole<String>>();
+    
     public RoomWS(Room room, LifecycleManager.SessionRoomResponseProcessor srrp) {
         this.room = room;
         this.srrp = srrp;
     }
-
-    private Map<Session, MessageHandler.Whole<String>> handlersBySession = new ConcurrentHashMap<Session, MessageHandler.Whole<String>>();
 
     private static class SessionMessageHandler implements MessageHandler.Whole<String> {
         private final Session session;
@@ -83,24 +82,7 @@ public class RoomWS extends Endpoint {
             Log.log(Level.WARNING, this, "Error sending ack",io);
         }
         
-        if (srrp.activeSessions.size() == 0) {
-            Log.log(Level.FINE,this, " No sessions known.");
-        }
-        for (Session s : srrp.activeSessions) {
-            Log.log(Level.FINE,this, " Session: " + s.getId());
-            Log.log(Level.FINE,this, "   handlers: " + s.getMessageHandlers().size());
-            int mhc = 0;
-            for (MessageHandler m : s.getMessageHandlers()) {
-                if (m instanceof SessionMessageHandler) {
-                    SessionMessageHandler smh = (SessionMessageHandler) m;
-                    Log.log(Level.FINE,this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
-                            + " linked to room " + smh.owner.room.getRoomId());
-                } else {
-                    Log.log(Level.FINE,this, "    [" + mhc + "] unknown handler");
-                }
-                mhc++;
-            }
-        }
+        debugDumpSessionInfo();
 
         // (lifecycle) Called when the connection is opened
         srrp.addSession(session);
@@ -114,7 +96,7 @@ public class RoomWS extends Endpoint {
         session.addMessageHandler(String.class, chosen);
 
         Log.log(Level.FINE,this, "after opOpen room " + this.room.getRoomId());
-        for (Session s : srrp.activeSessions) {
+        for (Session s : srrp.getSessions()) {
             Log.log(Level.FINE,this, " Session: " + s.getId());
             Log.log(Level.FINE,this, "   handlers: " + s.getMessageHandlers().size());
             int mhc = 0;
@@ -132,6 +114,27 @@ public class RoomWS extends Endpoint {
 
     }
 
+    private void debugDumpSessionInfo() {
+        if (srrp.getSessions().size() == 0) {
+            Log.log(Level.FINE,this, " No sessions known.");
+        }
+        for (Session s : srrp.getSessions()) {
+            Log.log(Level.FINE,this, " Session: " + s.getId());
+            Log.log(Level.FINE,this, "   handlers: " + s.getMessageHandlers().size());
+            int mhc = 0;
+            for (MessageHandler m : s.getMessageHandlers()) {
+                if (m instanceof SessionMessageHandler) {
+                    SessionMessageHandler smh = (SessionMessageHandler) m;
+                    Log.log(Level.FINE,this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
+                            + " linked to room " + smh.owner.room.getRoomId());
+                } else {
+                    Log.log(Level.FINE,this, "    [" + mhc + "] unknown handler");
+                }
+                mhc++;
+            }
+        }
+    }
+
     @Override
     public void onClose(Session session, CloseReason reason) {
         // (lifecycle) Called when the connection is closed, treat this as the
@@ -143,7 +146,7 @@ public class RoomWS extends Endpoint {
         }
 
         Log.log(Level.FINE,this, "onClose called against room " + this.room.getRoomId());
-        for (Session s : srrp.activeSessions) {
+        for (Session s : srrp.getSessions()) {
             Log.log(Level.FINE,this, " Session: " + s.getId());
             Log.log(Level.FINE,this, "   handlers: " + s.getMessageHandlers().size());
             int mhc = 0;
@@ -168,7 +171,7 @@ public class RoomWS extends Endpoint {
             return;
         }
         if (contents[0].equals("room")) {
-            processCommand(session, contents[2]);
+            processCommand(contents[2]);
             return;
         }
         if (contents[0].equals("roomGoodbye")) {
@@ -179,7 +182,7 @@ public class RoomWS extends Endpoint {
     }
 
     // process a command
-    private void processCommand(Session session, String json) throws IOException {
+    private void processCommand(String json) throws IOException {
         Log.log(Level.FINE,this, "Command received from the user, " + this);
         JsonObject msg = Json.createReader(new StringReader(json)).readObject();
 

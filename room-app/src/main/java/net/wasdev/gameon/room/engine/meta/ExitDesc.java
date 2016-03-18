@@ -43,13 +43,13 @@ public class ExitDesc {
         }
     };
     
-    final Direction direction; 
-    final String name;
-    final String fullName; 
-    final String doorDescription; 
-    final String targetId;
-    final String connectionType; 
-    final String connectionTarget;
+    public final Direction direction; 
+    public final String name;
+    public final String fullName; 
+    private final String doorDescription; 
+    public final String targetId;
+    public final String connectionType; 
+    public final String connectionTarget;
     public final ExitHandler handler;
     
     public interface ExitHandler {
@@ -86,7 +86,7 @@ public class ExitDesc {
                 this.direction = Direction.DOWN; break;
             }
             default:{
-                throw new RuntimeException("Unknown direction "+direction);
+                throw new IllegalArgumentException("Unknown direction "+direction);
             }                
         }
         this.name = name;
