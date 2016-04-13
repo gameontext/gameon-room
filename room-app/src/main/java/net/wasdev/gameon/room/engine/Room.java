@@ -36,6 +36,7 @@ import net.wasdev.gameon.room.engine.parser.CommandTemplate;
 
 public class Room {
     
+    public final String TOKEN_ID;
     private Map<String, ExitDesc> exitMap;    
     private RoomDesc roomDesc;
     private Map<String, User> userMap = new ConcurrentHashMap<String, User>();
@@ -103,6 +104,7 @@ public class Room {
                 commandMap.put(verb.data.toUpperCase(), c);
             }
         }
+        TOKEN_ID = r.id + "_token";     //the name that will be used to query JNDI to see if a token has been defined for this room
     }
 
     public Map<String, String> getExitsMap(String senderId, Room room) {

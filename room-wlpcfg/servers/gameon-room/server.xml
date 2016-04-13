@@ -25,8 +25,8 @@
 
 	<jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
 	
-	<!-- This is set in the startup.sh script -->
-	<jndiEntry jndiName="originIp" value="${env.DOCKER_IP}"/>
+	<!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
+	<jndiEntry jndiName="RecRoom_token" value="kayleigh"/>
 
 	<logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
 

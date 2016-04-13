@@ -32,6 +32,7 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -54,6 +55,7 @@ public class RoomRegistrationHandler {
     private final String mapLocation;
     private final Room room;
     private AtomicBoolean handling503 = new AtomicBoolean(false);
+    private final String token;
     
     
     RoomRegistrationHandler(Room room, String id, String secret){
@@ -71,6 +73,14 @@ public class RoomRegistrationHandler {
             throw new IllegalStateException("The location for the map service cold not be "
                     + "found in a system property or environment variable named : " + Constants.ENV_MAP_SVC);
         }
+        
+        String value = "";
+        try {
+            value = (String) new InitialContext().lookup(room.TOKEN_ID);
+        } catch (NamingException e) {
+            //a token does not have to be defined for a given room
+        }
+        token = (value == null ? "" : value);
     }
     
     private static class RegistrationResult {
@@ -274,9 +284,16 @@ public class RoomRegistrationHandler {
             //if all the doors matched.. lets check the connection details..
             if(count==0){
                 JsonObject connectionDetails = info.getJsonObject("connectionDetails");
+                String existingToken = "";
+                try {
+                    existingToken = connectionDetails.getString("token");
+                } catch (NullPointerException e) {
+                    //token is optional so if it's not set let the NPE fall through
+                }
                 if(connectionDetails!=null){
                     if("websocket".equals(connectionDetails.getString("type"))
-                       && getEndpointForRoom().equals(connectionDetails.getString("target"))){
+                       && getEndpointForRoom().equals(connectionDetails.getString("target"))
+                       && token.equals(existingToken)){
                         
                         //all good.. no need to update this one.
                         needsUpdate = false;
@@ -373,6 +390,9 @@ public class RoomRegistrationHandler {
         connInfo.add("type", "websocket"); // the only current supported
                                            // type.
         connInfo.add("target", getEndpointForRoom());
+        if(!token.isEmpty()) {
+            connInfo.add("token", token);       //add security token if it is present
+        }
         registrationPayload.add("connectionDetails", connInfo.build());
 
         Response response=null;
@@ -424,5 +444,8 @@ public class RoomRegistrationHandler {
         return endPoint + "/ws/" +room.getRoomId();
     }
    
+    public String getToken() {
+        return token;
+    }
 
 }

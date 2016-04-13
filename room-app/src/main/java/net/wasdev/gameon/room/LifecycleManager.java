@@ -16,8 +16,6 @@
 package net.wasdev.gameon.room;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +34,9 @@ import javax.json.JsonObjectBuilder;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.websocket.Endpoint;
+import javax.websocket.HandshakeResponse;
 import javax.websocket.Session;
+import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpointConfig;
 
@@ -52,7 +52,6 @@ public class LifecycleManager implements ServerApplicationConfig {
 
     private String registrationSecret;
     private String systemId;
-    private String originIp;
 
     private Engine e = Engine.getEngine();
 
@@ -226,27 +225,23 @@ public class LifecycleManager implements ServerApplicationConfig {
         try {
             registrationSecret = (String) new InitialContext().lookup("registrationSecret");
             systemId = (String) new InitialContext().lookup("systemId");
-            originIp = (String) new InitialContext().lookup("originIp");
         } catch (NamingException e) {
         }
         if (registrationSecret == null || systemId == null) {
             throw new IllegalStateException("registrationSecret("+String.valueOf(registrationSecret)+") or systemid("+String.valueOf(systemId)+") was not found, check server.xml/server.env");
-        }
-        if(originIp == null) {
-            throw new IllegalStateException("originIp was not found, check server.xml/server.env");
         }
     }
 
     private static class RoomWSConfig extends ServerEndpointConfig.Configurator {
         private final Room room;
         private final SessionRoomResponseProcessor srrp;
-        private final String originIp;
+        private final String token;
 
-        public RoomWSConfig(Room room, SessionRoomResponseProcessor srrp, String originIp) {
+        public RoomWSConfig(Room room, SessionRoomResponseProcessor srrp, String token) {
             this.room = room;
             this.srrp = srrp;
             this.room.setRoomResponseProcessor(srrp);
-            this.originIp = originIp;
+            this.token = token;
         }
 
         @SuppressWarnings("unchecked")
@@ -257,30 +252,11 @@ public class LifecycleManager implements ServerApplicationConfig {
         }
 
         @Override
-        public boolean checkOrigin(String originHeaderValue) {
-            boolean result = super.checkOrigin(originHeaderValue);
-            Log.log(Level.INFO, this, "ORIGIN : Result = {0} for {1}", result, originHeaderValue);
-            if(result) {
-                result = false;     //super class check passed so reset flag
-                try {
-                    URI uri = new URI(originHeaderValue);
-                    Log.log(Level.INFO, this, "ORIGIN : URI = {0}, scheme = {1}", uri.toString(), uri.getScheme());
-                    if((uri.getScheme() != null) && uri.getScheme().equalsIgnoreCase("http")) {
-                        Log.log(Level.INFO, this, "ORIGIN : Getting host = {0}", uri.getHost());
-                        if(uri.getHost().equals(originIp)) {
-                            Log.log(Level.INFO, this, "Websocket origin validation PASSED for {0}", originHeaderValue);
-                            return true;
-                        }
-                    }
-                } catch (URISyntaxException e) {
-                    //do nothing, let it fall through and fail
-                }
-            }
-            Log.log(Level.WARNING, this, "Websocket origin validation failed for {0}, expected {1}", originHeaderValue, originIp);
-            return false;
+        public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
+            super.modifyHandshake(sec, request, response);
+            GameOnWSHandshakeAuth auth = new GameOnWSHandshakeAuth(token, request, response);
+            auth.validate();
         }
-        
-        
     }
 
     private Set<ServerEndpointConfig> registerRooms(Collection<Room> rooms) {
@@ -298,7 +274,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             
             //now regardless of our registration, open our websocket.
             SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
-            ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp, originIp);
+            ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp, roomRegistration.getToken());
 
             endpoints.add(ServerEndpointConfig.Builder.create(RoomWS.class, "/ws/" + room.getRoomId())
                     .configurator(config).build());
