@@ -34,7 +34,9 @@ import javax.json.JsonObjectBuilder;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.websocket.Endpoint;
+import javax.websocket.HandshakeResponse;
 import javax.websocket.Session;
+import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpointConfig;
 
@@ -233,11 +235,13 @@ public class LifecycleManager implements ServerApplicationConfig {
     private static class RoomWSConfig extends ServerEndpointConfig.Configurator {
         private final Room room;
         private final SessionRoomResponseProcessor srrp;
+        private final String token;
 
-        public RoomWSConfig(Room room, SessionRoomResponseProcessor srrp) {
+        public RoomWSConfig(Room room, SessionRoomResponseProcessor srrp, String token) {
             this.room = room;
             this.srrp = srrp;
             this.room.setRoomResponseProcessor(srrp);
+            this.token = token;
         }
 
         @SuppressWarnings("unchecked")
@@ -245,6 +249,13 @@ public class LifecycleManager implements ServerApplicationConfig {
         public <T> T getEndpointInstance(Class<T> endpointClass) {
             RoomWS r = new RoomWS(this.room, this.srrp);
             return (T) r;
+        }
+
+        @Override
+        public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
+            super.modifyHandshake(sec, request, response);
+            GameOnWSHandshakeAuth auth = new GameOnWSHandshakeAuth(token, request, response);
+            auth.validate();
         }
     }
 
@@ -263,7 +274,7 @@ public class LifecycleManager implements ServerApplicationConfig {
             
             //now regardless of our registration, open our websocket.
             SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
-            ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp);
+            ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp, roomRegistration.getToken());
 
             endpoints.add(ServerEndpointConfig.Builder.create(RoomWS.class, "/ws/" + room.getRoomId())
                     .configurator(config).build());

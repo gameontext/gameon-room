@@ -1,5 +1,8 @@
 #!/bin/bash
 
+export DOCKER_IP="$(ifconfig eth0 | grep "inet addr" | awk '{print substr($2,6)}')"
+echo "Docker assigned IP = $DOCKER_IP"
+
 if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   echo Setting up etcd...
   echo "** Testing etcd is accessible"

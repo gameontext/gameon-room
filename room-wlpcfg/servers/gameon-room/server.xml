@@ -11,7 +11,7 @@
         <feature>concurrent-1.0</feature>
     </featureManager>
 
-    <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
+    <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*"  -->
     <httpEndpoint host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint"/>
 
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
@@ -24,6 +24,9 @@
     <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
 
 	<jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
+	
+	<!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
+	<jndiEntry jndiName="RecRoom_token" value="kayleigh"/>
 
 	<logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
 
