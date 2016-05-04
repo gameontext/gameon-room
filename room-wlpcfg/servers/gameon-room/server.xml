@@ -26,7 +26,7 @@
 	<jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
 	
 	<!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
-	<jndiEntry jndiName="RecRoom_token" value="kayleigh"/>
+	<!-- <jndiEntry jndiName="RecRoom_token" value="kayleigh"/> -->
 
 	<logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
 
