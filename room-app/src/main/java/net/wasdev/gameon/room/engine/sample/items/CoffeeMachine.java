@@ -21,7 +21,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.enterprise.inject.spi.CDI;
-
+import java.util.logging.Level;
+import net.wasdev.gameon.room.Log;
 import net.wasdev.gameon.room.Kafka;
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.User;
