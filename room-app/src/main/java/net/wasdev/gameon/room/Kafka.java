@@ -32,7 +32,8 @@ public class Kafka {
        System.out.println("Initializing kafka producer for url "+kafkaUrl);
        Properties producerProps = new Properties();
        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
-       producerProps.put("acks","all");
+       producerProps.put("acks","-1");
+       producerProps.put("client.id","gameon-room");
        producerProps.put("retries",0);
        producerProps.put("batch.size",16384);
        producerProps.put("zookeeper.session.timeout.ms",1000);
@@ -40,6 +41,22 @@ public class Kafka {
        producerProps.put("buffer.memory",33554432);
        producerProps.put("key.serializer","org.apache.kafka.common.serialization.StringSerializer");
        producerProps.put("value.serializer","org.apache.kafka.common.serialization.StringSerializer");
+
+       //this is a cheat, we need to enable ssl when talking to message hub, and not to kafka locally
+       //the easiest way to know which we are running on, is to check how many hosts are in kafkaUrl
+       //locally for kafka there'll only ever be one, and messagehub gives us a whole bunch..
+       boolean multipleHosts = kafkaUrl.indexOf(",") != -1;
+       if(multipleHosts){
+         producerProps.put("security.protocol","SASL_SSL");
+         producerProps.put("ssl.protocol","TLSv1.2");
+         producerProps.put("ssl.enabled.protocols","TLSv1.2");
+         producerProps.put("ssl.truststore.location","/opt/ibm/java/jre/security/cacerts");
+         producerProps.put("ssl.truststore.password","changeit");
+         producerProps.put("ssl.truststore.type","JKS");
+         producerProps.put("ssl.endpoint.identification.algorithm","HTTPS");
+       }
+
+
        producer = new KafkaProducer<String, String>(producerProps);
    }
 
