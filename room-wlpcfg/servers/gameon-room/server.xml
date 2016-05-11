@@ -2,8 +2,8 @@
 
     <!-- Enable features -->
     <featureManager>
-	<feature>websocket-1.1</feature>
-	<feature>localConnector-1.0</feature>
+        <feature>websocket-1.1</feature>
+        <feature>localConnector-1.0</feature>
         <feature>jaxrs-2.0</feature>
         <feature>cdi-1.2</feature>
         <feature>jsonp-1.0</feature>
