@@ -31,7 +31,7 @@ public class Kafka {
    private void initProducer(){
        System.out.println("Initializing kafka producer for url "+kafkaUrl);
        Properties producerProps = new Properties();
-       producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9092");
+       producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
        producerProps.put("acks","all");
        producerProps.put("retries",0);
        producerProps.put("batch.size",16384);
