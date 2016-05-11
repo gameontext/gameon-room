@@ -20,6 +20,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.enterprise.inject.spi.CDI;
+
+import net.wasdev.gameon.room.Kafka;
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.User;
 import net.wasdev.gameon.room.engine.meta.ItemDesc;
@@ -82,6 +85,8 @@ public class Mug extends ItemDesc {
                         useMugInRoomWithItemInContainer, useMugInContainerWithRoomItem,
                         useMugInContainerWithInventoryItem, useMugInContainerWithItemInContainer })));
 
+        private Kafka kafka = CDI.current().select(Kafka.class).get();
+
         @Override
         public Set<CommandTemplate> getTemplates() {
             return templates;
@@ -133,6 +138,13 @@ public class Mug extends ItemDesc {
                         if (mug.item.getAndSetState("empty", "full") || mug.item.getAndSetState("", "full")) {
                             room.playerEvent(execBy, "You make a hot cup of coffee.",
                                     u.username + " makes a mug of coffee.");
+                            if(kafka!=null){
+                              Log.log(Level.FINE, this, "Sending message to kafka");
+                              kafka.publishMessage("gameon","coffee","User "+u.username+" made coffee in "+room.getRoomName()+" using command '"+command.originalCommand+"'");
+                              Log.log(Level.FINE, this, "Sent message to kafka");
+                            }else{
+                              Log.log(Level.FINE, this, "Kafka bean lookup failed.. ");
+                            }
                         } else {
                             room.playerEvent(execBy,
                                     "You attempt to fill the already full cup with more coffee. Coffee goes everywhere, you desperately clean up the coffee hoping nobody noticed.",
@@ -157,7 +169,7 @@ public class Mug extends ItemDesc {
 
         @Override
         public void processUnknown(Room room, String execBy, String origCmd, String cmdWithoutVerb) {
-            room.playerEvent(execBy, "I'm sorry, but I'm not sure how I'm supposed to use the " + cmdWithoutVerb, null);
+            room.playerEvent(execBy, "I'm sorry, but I'm just not sure how I'm supposed to use the " + cmdWithoutVerb, null);
         }
 
     };
