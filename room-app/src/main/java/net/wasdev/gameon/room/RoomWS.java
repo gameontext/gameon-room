@@ -82,36 +82,23 @@ public class RoomWS extends Endpoint {
             Log.log(Level.WARNING, this, "Error sending ack",io);
         }
         
+        //session debug.
         debugDumpSessionInfo();
 
         // (lifecycle) Called when the connection is opened
         srrp.addSession(session);
 
+        //add handler if needed, or use existing one.
         MessageHandler.Whole<String> handlerForSession = new SessionMessageHandler(session, this);
-
         MessageHandler.Whole<String> fromMap = handlersBySession.get(session);
         MessageHandler.Whole<String> chosen = fromMap != null ? fromMap : handlerForSession;
         handlersBySession.put(session, chosen);
 
         session.addMessageHandler(String.class, chosen);
 
+        //session debug.
         Log.log(Level.FINE,this, "after opOpen room " + this.room.getRoomId());
-        for (Session s : srrp.getSessions()) {
-            Log.log(Level.FINE,this, " Session: " + s.getId());
-            Log.log(Level.FINE,this, "   handlers: " + s.getMessageHandlers().size());
-            int mhc = 0;
-            for (MessageHandler m : s.getMessageHandlers()) {
-                if (m instanceof SessionMessageHandler) {
-                    SessionMessageHandler smh = (SessionMessageHandler) m;
-                    Log.log(Level.FINE,this, "    [" + mhc + "] SessionMessageHandler for session " + smh.session.getId()
-                            + " linked to room " + smh.owner.room.getRoomId());
-                } else {
-                    Log.log(Level.FINE,this, "    [" + mhc + "] unknown handler");
-                }
-                mhc++;
-            }
-        }
-
+        debugDumpSessionInfo();
     }
 
     private void debugDumpSessionInfo() {

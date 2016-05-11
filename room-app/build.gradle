@@ -14,6 +14,9 @@ dependencies {
     providedCompile 'javax.enterprise.concurrent:javax.enterprise.concurrent-api:1.0'
     compile 'org.mongodb:mongo-java-driver:2.12.3'
     compile project(':app-common')
+
+    // kafka client =)
+    compile 'org.apache.kafka:kafka-clients:0.9.0.0'
 }
 
 // Set the Eclipse facets to use 3.1 of the Dynamic Web Module which requires Java 1.7 by default.

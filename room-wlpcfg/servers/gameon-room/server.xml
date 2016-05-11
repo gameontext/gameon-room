@@ -2,8 +2,8 @@
 
     <!-- Enable features -->
     <featureManager>
-		<feature>websocket-1.1</feature>
-	    <feature>localConnector-1.0</feature>
+	<feature>websocket-1.1</feature>
+	<feature>localConnector-1.0</feature>
         <feature>jaxrs-2.0</feature>
         <feature>cdi-1.2</feature>
         <feature>jsonp-1.0</feature>
@@ -17,23 +17,27 @@
     <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
     <keyStore id="defaultTrustStore" location="truststore.jks" password="truststore"/>
 
-	<sslDefault sslRef="DefaultSSLSettings" />
-	<ssl id="DefaultSSLSettings" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" />
+    <sslDefault sslRef="DefaultSSLSettings" />
+    <ssl id="DefaultSSLSettings" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" />
 
     <!-- Our key that allows us to register rooms -->
     <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
 
-	<jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
-	
-	<!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
-	<jndiEntry jndiName="RecRoom_token" value="kayleigh"/>
 
-	<logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
+    <jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
+    <!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
+    <!-- <jndiEntry jndiName="RecRoom_token" value="kayleigh"/> -->
 
-	<!-- This is required to prevent the web apps from being lazily loaded -->
-	<webContainer deferServletLoad="false"/>
 
-	<!-- Executor used by RoomRegistration because it can't use CDI -->
+    <!-- kafka config.. (userid/password is used by config dropin, not needed as jndi var)-->
+    <jndiEntry jndiName="kafkaUrl" value="${env.KAFKA_URL}"/>
+
+    <logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
+
+    <!-- This is required to prevent the web apps from being lazily loaded -->
+    <webContainer deferServletLoad="false"/>
+
+    <!-- Executor used by RoomRegistration because it can't use CDI -->
     <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
 
     <applicationMonitor dropinsEnabled="false"/>

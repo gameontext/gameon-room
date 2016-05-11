@@ -21,7 +21,7 @@ public class LinkWord extends Node {
     public LinkWord(String word) {
         this.word = word.trim().toUpperCase();
         if (word.contains(":") || word.contains("/")) {
-            throw new RuntimeException("Forbidden characters : or / found in linkword name");
+            throw new IllegalArgumentException("Forbidden characters : or / found in linkword name");
         }
     }
 

@@ -45,12 +45,12 @@ public class ExitDesc {
     
     public final Direction direction; 
     public final String name;
-    public final String fullName; 
-    private final String doorDescription; 
+    public final String fullName;
     public final String targetId;
     public final String connectionType; 
     public final String connectionTarget;
     public final ExitHandler handler;
+    private final String doorDescription; 
     
     public interface ExitHandler {
 
