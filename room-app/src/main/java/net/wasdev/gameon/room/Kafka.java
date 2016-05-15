@@ -29,6 +29,14 @@ public class Kafka {
    }
 
    private void initProducer(){
+       //Kafka client expects this property to be set and pointing at the
+       //jaas config file.. except when running in liberty, we don't need
+       //one of those.. thankfully, neither does kafka client, it just doesn't
+       //know that.. so we'll set this to an empty string to bypass the check.
+       if(System.getProperty("java.security.auth.login.config")==null){
+         System.setProperty("java.security.auth.login.config", "");
+       }
+
        System.out.println("Initializing kafka producer for url "+kafkaUrl);
        Properties producerProps = new Properties();
        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
