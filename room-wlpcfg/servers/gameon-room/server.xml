@@ -1,42 +1,45 @@
 <server description="Game On! Room Service">
 
-    <!-- Enable features -->
-    <featureManager>
-		<feature>websocket-1.1</feature>
-	    <feature>localConnector-1.0</feature>
-        <feature>jaxrs-2.0</feature>
-        <feature>cdi-1.2</feature>
-        <feature>jsonp-1.0</feature>
-        <feature>ssl-1.0</feature>
-        <feature>concurrent-1.0</feature>
-    </featureManager>
+  <!-- Enable features -->
+  <featureManager>
+    <feature>websocket-1.1</feature>
+    <feature>localConnector-1.0</feature>
+    <feature>jaxrs-2.0</feature>
+    <feature>cdi-1.2</feature>
+    <feature>jsonp-1.0</feature>
+    <feature>ssl-1.0</feature>
+    <feature>concurrent-1.0</feature>
+  </featureManager>
 
-    <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*"  -->
-    <httpEndpoint host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint"/>
+  <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*"  -->
+  <httpEndpoint host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint"/>
 
-    <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
-    <keyStore id="defaultTrustStore" location="truststore.jks" password="truststore"/>
+  <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
+  <keyStore id="defaultTrustStore" location="truststore.jks" password="truststore"/>
 
-	<sslDefault sslRef="DefaultSSLSettings" />
-	<ssl id="DefaultSSLSettings" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" />
+  <sslDefault sslRef="DefaultSSLSettings" />
+  <ssl id="DefaultSSLSettings" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" />
 
-    <!-- Our key that allows us to register rooms -->
-    <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
+  <!-- Our key that allows us to register rooms -->
+  <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
 
-	<jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
-	
-	<!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
-	<!-- <jndiEntry jndiName="RecRoom_token" value="kayleigh"/> -->
+  <jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
 
-	<logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
+  <!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
+  <!-- <jndiEntry jndiName="RecRoom_token" value="kayleigh"/> -->
 
-	<!-- This is required to prevent the web apps from being lazily loaded -->
-	<webContainer deferServletLoad="false"/>
+  <logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
 
-	<!-- Executor used by RoomRegistration because it can't use CDI -->
-    <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
+  <!-- This is required to prevent the web apps from being lazily loaded -->
+  <webContainer deferServletLoad="false"/>
 
-    <applicationMonitor dropinsEnabled="false"/>
+  <!-- Executor used by RoomRegistration because it can't use CDI -->
+  <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
 
-    <webApplication id="room-app" location="room-app.war" name="room-app"/>
+  <!-- The JVM can get confused about available CPU in virtualized envs -->
+  <executor coreThreads="10"  />
+
+  <applicationMonitor dropinsEnabled="false"/>
+
+  <webApplication id="room-app" location="room-app.war" name="room-app"/>
 </server>
