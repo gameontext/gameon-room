@@ -49,7 +49,7 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
     sleep 0.5
     ./forwarder --config ./forwarder.conf
   else
-    /opt/ibm/wlp/bin/server run defaultServer
+    exec /opt/ibm/wlp/bin/server run defaultServer
   fi
 
 else
