@@ -12,36 +12,39 @@
         <feature>appSecurity-2.0</feature>
     </featureManager>
 
-    <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*"  -->
-    <httpEndpoint host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint"/>
 
-    <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
-    <keyStore id="defaultTrustStore" location="truststore.jks" password="truststore"/>
+  <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*"  -->
+  <httpEndpoint host="*" httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint"/>
 
-    <sslDefault sslRef="DefaultSSLSettings" />
-    <ssl id="DefaultSSLSettings" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" />
+  <keyStore id="defaultKeyStore" password="testOnlyKeystore"/>
+  <keyStore id="defaultTrustStore" location="truststore.jks" password="truststore"/>
 
-    <!-- Our key that allows us to register rooms -->
-    <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
+  <sslDefault sslRef="DefaultSSLSettings" />
+  <ssl id="DefaultSSLSettings" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" />
 
+  <!-- Our key that allows us to register rooms -->
+  <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
 
-    <jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
-    <!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
-    <!-- <jndiEntry jndiName="RecRoom_token" value="kayleigh"/> -->
+  <jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
 
+  <!-- Tokens used by the rooms to validate / authenticate connections with the mediator -->
+  <!-- <jndiEntry jndiName="RecRoom_token" value="kayleigh"/> -->
 
-    <!-- kafka config.. (userid/password is used by config dropin, not needed as jndi var)-->
-    <jndiEntry jndiName="kafkaUrl" value="${env.KAFKA_URL}"/>
+  <!-- kafka config.. (userid/password is used by config dropin, not needed as jndi var)-->
+  <jndiEntry jndiName="kafkaUrl" value="${env.KAFKA_URL}"/>
 
-    <logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
+  <logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
 
-    <!-- This is required to prevent the web apps from being lazily loaded -->
-    <webContainer deferServletLoad="false"/>
+  <!-- This is required to prevent the web apps from being lazily loaded -->
+  <webContainer deferServletLoad="false"/>
 
-    <!-- Executor used by RoomRegistration because it can't use CDI -->
-    <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
+  <!-- Executor used by RoomRegistration because it can't use CDI -->
+  <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
 
-    <applicationMonitor dropinsEnabled="false"/>
+  <!-- The JVM can get confused about available CPU in virtualized envs -->
+  <executor coreThreads="10"  />
 
-    <webApplication id="room-app" location="room-app.war" name="room-app"/>
+  <applicationMonitor dropinsEnabled="false"/>
+
+  <webApplication id="room-app" location="room-app.war" name="room-app"/>
 </server>
