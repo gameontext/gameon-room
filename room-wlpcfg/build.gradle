@@ -30,7 +30,8 @@ def localEnvironment = ["LICENSE=accept",
 			"service_map=" + System.getenv('SERVICE_MAP'),
 			"service_room=" + System.getenv('SERVICE_ROOM'),
 			"MAP_KEY=" + System.getenv('MAP_KEY'),
-			"SYSTEM_ID=" + System.getenv('SYSTEM_ID')]
+			"SYSTEM_ID=" + System.getenv('SYSTEM_ID'),
+			"KAFKA_URL=" + System.getenv('KAFKA_URL')]
 
 def etcdEnvironment = ["LICENSE=accept",
 							"ETCDCTL_ENDPOINT=http://etcd:4001"]

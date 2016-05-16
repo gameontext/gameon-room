@@ -33,6 +33,16 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   export MAP_KEY=$(etcdctl get /passwords/map-key)
   export LOGSTASH_ENDPOINT=$(etcdctl get /logstash/endpoint)
   export SYSTEM_ID=$(etcdctl get /player/system_id)
+  export KAFKA_USER=$(etcdctl get /kafka/url)
+  export KAFKA_USER=$(etcdctl get /kafka/user)
+  export KAFKA_PASSWORD=$(etcdctl get /passwords/kafka)
+
+  #to run with message hub, we need a jaas jar we can only obtain
+  #from github, and have to use an extra config snippet to enable it.
+  cd /opt/ibm/wlp/usr/servers/defaultServer
+  mkdir -p configDropins
+  mv kafkaDropin.xml configDropins
+  wget https://github.com/ibm-messaging/message-hub-samples/raw/master/java/message-hub-liberty-sample/lib-message-hub/messagehub.login-1.0.0.jar
 
   # Softlayer needs a logstash endpoint so we set up the server
   # to run in the background and the primary task is running the
