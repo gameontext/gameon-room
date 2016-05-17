@@ -1,5 +1,7 @@
 package net.wasdev.gameon.room;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 import javax.enterprise.context.ApplicationScoped;
 import javax.naming.InitialContext;
