@@ -58,7 +58,8 @@ public class Kafka {
          producerProps.put("security.protocol","SASL_SSL");
          producerProps.put("ssl.protocol","TLSv1.2");
          producerProps.put("ssl.enabled.protocols","TLSv1.2");
-         producerProps.put("ssl.truststore.location","/opt/ibm/java/jre/security/cacerts");
+         Path p = Paths.get(System.getProperty("java.home"), "lib", "security", "cacerts");
+   			 producerProps.put("ssl.truststore.location", p.toString());
          producerProps.put("ssl.truststore.password","changeit");
          producerProps.put("ssl.truststore.type","JKS");
          producerProps.put("ssl.endpoint.identification.algorithm","HTTPS");
