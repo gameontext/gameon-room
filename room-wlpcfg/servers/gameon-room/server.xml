@@ -33,18 +33,17 @@
   <!-- kafka config.. (userid/password is used by config dropin, not needed as jndi var)-->
   <jndiEntry jndiName="kafkaUrl" value="${env.KAFKA_URL}"/>
 
-  <logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all"/>
-
-  <!-- This is required to prevent the web apps from being lazily loaded -->
-  <webContainer deferServletLoad="false"/>
-
   <!-- Executor used by RoomRegistration because it can't use CDI -->
   <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
 
+  <applicationMonitor dropinsEnabled="false" updateTrigger="polled"/>
+
+  <logging traceSpecification="*=info:org.gameon.*=all:org.gameontext.*=all"/>
+
+  <!-- This is required to prevent the web apps from being lazily loaded -->
+  <webContainer deferServletLoad="false"/>
   <!-- The JVM can get confused about available CPU in virtualized envs -->
   <executor coreThreads="10"  />
-
-  <applicationMonitor dropinsEnabled="false"/>
 
   <webApplication id="room-app" location="room-app.war" name="room-app"/>
 </server>
