@@ -17,6 +17,7 @@ package net.wasdev.gameon.room;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,9 @@ import javax.websocket.Session;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpointConfig;
+
+import org.gameontext.signed.SignedRequestHmac;
+import org.gameontext.signed.SignedRequestMap;
 
 import net.wasdev.gameon.room.engine.Engine;
 import net.wasdev.gameon.room.engine.Room;
@@ -254,8 +258,25 @@ public class LifecycleManager implements ServerApplicationConfig {
         @Override
         public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
             super.modifyHandshake(sec, request, response);
-            GameOnWSHandshakeAuth auth = new GameOnWSHandshakeAuth(token, request, response);
-            auth.validate();
+            
+            if ( token == null || token.isEmpty() ) {
+                Log.log(Level.FINEST, this, "No token set for room, skipping validation");
+            } else {
+                Log.log(Level.FINEST, this, "Validating WS handshake");
+                SignedRequestHmac wsHmac = new SignedRequestHmac("", token, "", request.getRequestURI().getRawPath());
+
+                try {
+                    wsHmac.checkHeaders(new SignedRequestMap.MLS_StringMap(request.getHeaders()))
+                            .verifyFullSignature()
+                            .wsResignRequest(new SignedRequestMap.MLS_StringMap(response.getHeaders())); 
+                    
+                    Log.log(Level.INFO, this, "validated and resigned", wsHmac);
+                } catch(Exception e) {
+                    Log.log(Level.WARNING, this, "Failed to validate HMAC, unable to establish connection", e);
+                    
+                    response.getHeaders().replace(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, Collections.emptyList());
+                }
+            }
         }
     }
 

@@ -43,6 +43,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.gameontext.signed.SignedClientRequestFilter;
+import org.gameontext.signed.SignedWriterInterceptor;
+
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.meta.DoorDesc;
 import net.wasdev.gameon.room.engine.meta.ExitDesc;
@@ -99,11 +102,12 @@ public class RoomRegistrationHandler {
         try {
             Client queryClient = ClientBuilder.newClient();
 
-            // add our shared secret 
-            queryClient.register(new GameOnHeaderAuthFilter(id, secret));
+            // add our request signer
+            queryClient.register(new SignedClientRequestFilter(id, secret));
 
             // create the jax-rs 2.0 client
             WebTarget queryRoot = queryClient.target(mapLocation);
+            
             // add the lookup arg for this room..
             WebTarget target = queryRoot.queryParam("owner", id).queryParam("name", room.getRoomId());
             Response r = null;
@@ -131,7 +135,8 @@ public class RoomRegistrationHandler {
                     
                     // now we have our id.. make a new request to get our exit wirings.. 
                     queryClient = ClientBuilder.newClient();
-                    queryClient.register(new GameOnHeaderAuthFilter(id, secret));
+                    queryClient.register(new SignedClientRequestFilter(id, secret));
+                    
                     WebTarget lookup = queryClient.target(mapLocation);
                     Invocation.Builder builder = lookup.path("{roomId}").resolveTemplate("roomId", roomId).request(MediaType.APPLICATION_JSON);
                     Response response = builder.get();
@@ -338,10 +343,10 @@ public class RoomRegistrationHandler {
 
         // add our shared secret so all our queries come from the
         // game-on.org id
-        postClient.register(new GameOnHeaderAuthInterceptor(id, secret));
+        postClient.register(new SignedClientRequestFilter(id, secret));
         
         // create the jax-rs 2.0 client
-        WebTarget root = postClient.target(mapLocation);  
+        WebTarget root = postClient.target(mapLocation);
         
         // build the registration/update payload (post data)
         JsonObjectBuilder registrationPayload = Json.createObjectBuilder();
@@ -399,12 +404,12 @@ public class RoomRegistrationHandler {
         switch(mode){
             case REGISTER:{
                 Invocation.Builder builder = root.request(MediaType.APPLICATION_JSON);
-                response = builder.post(Entity.json(registrationPayload.build().toString()));
+                response = builder.post(Entity.json(registrationPayload.build()));
                 break;
             }
             case UPDATE:{
                 Invocation.Builder builder = root.path("{roomId}").resolveTemplate("roomId", roomId).request(MediaType.APPLICATION_JSON);
-                response = builder.put(Entity.json(registrationPayload.build().toString()));
+                response = builder.put(Entity.json(registrationPayload.build()));
                 break;
             }
             default:{
