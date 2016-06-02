@@ -138,7 +138,7 @@ public class RoomRegistrationHandler {
                     queryClient.register(new SignedClientRequestFilter(id, secret));
                     
                     WebTarget lookup = queryClient.target(mapLocation);
-                    Invocation.Builder builder = lookup.path("{roomId}").resolveTemplate("roomId", roomId).request(MediaType.APPLICATION_JSON);
+                    Invocation.Builder builder = lookup.resolveTemplate("roomId", roomId).path("{roomId}").request(MediaType.APPLICATION_JSON);
                     Response response = builder.get();
                     respString = response.readEntity(String.class);    
                     
