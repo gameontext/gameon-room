@@ -40,7 +40,7 @@ public class RoomWS extends Endpoint {
     private final Room room;
     private final LifecycleManager.SessionRoomResponseProcessor srrp;
     private Map<Session, MessageHandler.Whole<String>> handlersBySession = new ConcurrentHashMap<Session, MessageHandler.Whole<String>>();
-    
+
     public RoomWS(Room room, LifecycleManager.SessionRoomResponseProcessor srrp) {
         this.room = room;
         this.srrp = srrp;
@@ -68,8 +68,8 @@ public class RoomWS extends Endpoint {
     @Override
     public void onOpen(final Session session, EndpointConfig ec) {
         Log.log(Level.FINE,this, "onOpen called against room " + this.room.getRoomId());
-        
-        //send ack 
+
+        //send ack
         try{
             JsonObjectBuilder ack = Json.createObjectBuilder();
             JsonArrayBuilder versions = Json.createArrayBuilder();
@@ -81,7 +81,7 @@ public class RoomWS extends Endpoint {
         }catch(IOException io){
             Log.log(Level.WARNING, this, "Error sending ack",io);
         }
-        
+
         //session debug.
         debugDumpSessionInfo();
 
@@ -175,7 +175,7 @@ public class RoomWS extends Endpoint {
 
         String content = Message.getValue(msg.get("content"));
         String userid = Message.getValue(msg.get(Constants.USERID));
-     
+
         if (content.startsWith("/")) {
             room.command(userid, content.substring(1));
         } else {
@@ -197,7 +197,7 @@ public class RoomWS extends Endpoint {
         String userid = Message.getValue(msg.get(Constants.USERID));
 
         Log.log(Level.INFO, this, "*** Adding player {0} from room {1} via session {2}", userid,room.getRoomId(),session.getId());
-        
+
         room.addUserToRoom(userid, username);
         room.command(userid, "look");
     }

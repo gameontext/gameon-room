@@ -5,7 +5,8 @@
 /servers/*/logs
 /servers/*/workarea
 /servers/.pid
+/servers/gameon-room/resources
+/servers/gameon-room/configDropins/overrides
 /build/
 /servers/.classCache
 /target
-servers/gameon-room/resources

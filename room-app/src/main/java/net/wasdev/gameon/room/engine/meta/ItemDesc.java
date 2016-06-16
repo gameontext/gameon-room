@@ -23,7 +23,7 @@ public class ItemDesc {
     public final boolean takeable;
     public final boolean clearStateOnDrop;
     public final ItemUseHandler useHandler;
-    
+
     private String state = "";
     private final Object stateMonitor = new Object();
     private final String description;

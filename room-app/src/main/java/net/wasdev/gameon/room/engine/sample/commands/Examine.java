@@ -48,7 +48,7 @@ public class Examine extends CommandHandler {
     public String getHelpText(){
         return "Examines an item in the room or your inventory.";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

@@ -27,7 +27,7 @@ import net.wasdev.gameon.room.engine.sample.SampleDataProvider;
 public class Engine {
 
     private static final Engine engine = new Engine();
-    
+
     // eventually we'll let this be customizable..
     private DataProvider dp = new SampleDataProvider();
 
@@ -42,7 +42,7 @@ public class Engine {
         // wrap it into an unmodifiable to prevent accidents ;p
         return Collections.unmodifiableCollection(dp.getRooms());
     }
-    
+
     /**
      * Console based test rig.
      */

@@ -155,25 +155,25 @@ public class LifecycleManager implements ServerApplicationConfig {
             content.add("name", roomId);
             content.add("fullName", roomName);
             content.add("description", roomDescription);
-            
+
             JsonObjectBuilder exitJson = Json.createObjectBuilder();
             for (Entry<String, String> e : exits.entrySet()) {
                 exitJson.add(e.getKey().toUpperCase(), e.getValue());
             }
             content.add("exits", exitJson.build());
-            
+
             JsonObjectBuilder commandJson = Json.createObjectBuilder();
             for (Entry<String, String> c : commands.entrySet()) {
                 commandJson.add(c.getKey(), c.getValue());
             }
             content.add("commands", commandJson.build());
-            
+
             JsonArrayBuilder inv = Json.createArrayBuilder();
             for (String i : inventory) {
                 inv.add(i);
             }
             content.add("pockets", inv.build());
-            
+
             JsonArrayBuilder objs = Json.createArrayBuilder();
             for (String o : objects) {
                 objs.add(o);
@@ -219,7 +219,7 @@ public class LifecycleManager implements ServerApplicationConfig {
         public void removeSession(Session s) {
             activeSessions.remove(s);
         }
-        
+
         public Collection<Session> getSessions() {
             return activeSessions;
         }
@@ -258,7 +258,7 @@ public class LifecycleManager implements ServerApplicationConfig {
         @Override
         public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
             super.modifyHandshake(sec, request, response);
-            
+
             if ( token == null || token.isEmpty() ) {
                 Log.log(Level.FINEST, this, "No token set for room, skipping validation");
             } else {
@@ -268,12 +268,12 @@ public class LifecycleManager implements ServerApplicationConfig {
                 try {
                     wsHmac.checkHeaders(new SignedRequestMap.MLS_StringMap(request.getHeaders()))
                             .verifyFullSignature()
-                            .wsResignRequest(new SignedRequestMap.MLS_StringMap(response.getHeaders())); 
-                    
+                            .wsResignRequest(new SignedRequestMap.MLS_StringMap(response.getHeaders()));
+
                     Log.log(Level.INFO, this, "validated and resigned", wsHmac);
                 } catch(Exception e) {
                     Log.log(Level.WARNING, this, "Failed to validate HMAC, unable to establish connection", e);
-                    
+
                     response.getHeaders().replace(HandshakeResponse.SEC_WEBSOCKET_ACCEPT, Collections.emptyList());
                 }
             }
@@ -284,7 +284,7 @@ public class LifecycleManager implements ServerApplicationConfig {
 
         Set<ServerEndpointConfig> endpoints = new HashSet<ServerEndpointConfig>();
         for (Room room : rooms) {
-            
+
             RoomRegistrationHandler roomRegistration = new RoomRegistrationHandler(room, systemId, registrationSecret);
             try{
                 roomRegistration.performRegistration();
@@ -292,7 +292,7 @@ public class LifecycleManager implements ServerApplicationConfig {
                 Log.log(Level.SEVERE, this, "Room Registration FAILED", e);
                 //we keep running, maybe we were registered ok before...
             }
-            
+
             //now regardless of our registration, open our websocket.
             SessionRoomResponseProcessor srrp = new SessionRoomResponseProcessor();
             ServerEndpointConfig.Configurator config = new RoomWSConfig(room, srrp, roomRegistration.getToken());
@@ -312,8 +312,8 @@ public class LifecycleManager implements ServerApplicationConfig {
             return registerRooms(e.getRooms());
         } catch (IllegalStateException e) {
             Log.log(Level.SEVERE, this, "Error building endpoint configs for room", e);
-            //getEndpointConfigs is defined by ServerApplicationConfig, and doesn't allow for failure.. 
-            //so this is the best we can do.. 
+            //getEndpointConfigs is defined by ServerApplicationConfig, and doesn't allow for failure..
+            //so this is the best we can do..
             throw e;
         }
     }

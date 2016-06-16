@@ -111,7 +111,7 @@ public abstract class CommandHandler {
     public abstract Set<CommandTemplate> getTemplates();
 
     public abstract boolean isHidden();
-    
+
     public abstract String getHelpText();
 
     public abstract void processCommand(Room room, String execBy, ParsedCommand command);

@@ -40,7 +40,7 @@ public class Drop extends CommandHandler {
     public String getHelpText(){
         return "Drops an item you are carrying.";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

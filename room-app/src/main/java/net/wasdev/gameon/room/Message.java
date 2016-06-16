@@ -26,7 +26,7 @@ public class Message {
     /**
      * Strip off segments by leading comma, stop as soon as a { is reached
      * (beginning of JSON payload)
-     * 
+     *
      * @param message
      *            Message to split
      * @return Array containing parts of original message

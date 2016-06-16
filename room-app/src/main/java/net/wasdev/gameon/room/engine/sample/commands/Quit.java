@@ -37,7 +37,7 @@ public class Quit extends CommandHandler {
     public String getHelpText(){
         return "Return to desktop.";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

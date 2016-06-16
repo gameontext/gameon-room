@@ -39,7 +39,7 @@ public class Inventory extends CommandHandler {
     public String getHelpText(){
         return "List the items in your inventory.";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

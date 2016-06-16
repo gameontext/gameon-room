@@ -18,7 +18,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 public class Kafka {
 
    @Resource(lookup="kafkaUrl")
-   protected String kafkaUrl;  
+   protected String kafkaUrl;
 
    private Producer<String,String> producer=null;
 
@@ -35,7 +35,7 @@ public class Kafka {
          if(System.getProperty("java.security.auth.login.config")==null){
            System.setProperty("java.security.auth.login.config", "");
          }
-    
+
          Log.log(Level.INFO, this, "Initializing kafka producer for url {0}", kafkaUrl);
          Properties producerProps = new Properties();
          producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
@@ -47,7 +47,7 @@ public class Kafka {
          producerProps.put(ProducerConfig.BUFFER_MEMORY_CONFIG,33554432);
          producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.StringSerializer");
          producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.StringSerializer");
-    
+
          //this is a cheat, we need to enable ssl when talking to message hub, and not to kafka locally
          //the easiest way to know which we are running on, is to check how many hosts are in kafkaUrl
          //locally for kafka there'll only ever be one, and messagehub gives us a whole bunch..
@@ -63,7 +63,7 @@ public class Kafka {
            producerProps.put("ssl.truststore.type","JKS");
            producerProps.put("ssl.endpoint.identification.algorithm","HTTPS");
          }
-    
+
          producer = new KafkaProducer<String, String>(producerProps);
      }catch(Exception e){
          System.out.println("KAFKA INIT FAILED");
@@ -78,5 +78,5 @@ public class Kafka {
      producer.send(pr);
      Log.log(Level.FINER, this, "Published Event");
    }
-   
+
 }

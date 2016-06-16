@@ -45,7 +45,7 @@ public class Take extends CommandHandler {
     public String getHelpText(){
         return "Pick up an item thats in the room, or take an item **from** a container";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

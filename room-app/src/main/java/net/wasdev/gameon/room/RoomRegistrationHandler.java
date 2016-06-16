@@ -59,13 +59,13 @@ public class RoomRegistrationHandler {
     private final Room room;
     private AtomicBoolean handling503 = new AtomicBoolean(false);
     private final String token;
-    
-    
+
+
     RoomRegistrationHandler(Room room, String id, String secret){
         this.id=id;
         this.room=room;
         this.secret=secret;
-        
+
         endPoint = System.getProperty(Constants.ENV_ROOM_SVC, System.getenv(Constants.ENV_ROOM_SVC));
         if (endPoint == null) {
             throw new IllegalStateException("The location for the room service cold not be "
@@ -76,7 +76,7 @@ public class RoomRegistrationHandler {
             throw new IllegalStateException("The location for the map service cold not be "
                     + "found in a system property or environment variable named : " + Constants.ENV_MAP_SVC);
         }
-        
+
         String value = "";
         try {
             value = (String) new InitialContext().lookup(room.TOKEN_ID);
@@ -85,13 +85,13 @@ public class RoomRegistrationHandler {
         }
         token = (value == null ? "" : value);
     }
-    
+
     private static class RegistrationResult {
         enum Type { NOT_REGISTERED, REGISTERED, SERVICE_UNAVAILABLE };
         public Type type;
         public JsonObject registeredObject;
     }
-    
+
     /**
      * Obtain current registration for this room
      * @param roomId
@@ -107,7 +107,7 @@ public class RoomRegistrationHandler {
 
             // create the jax-rs 2.0 client
             WebTarget queryRoot = queryClient.target(mapLocation);
-            
+
             // add the lookup arg for this room..
             WebTarget target = queryRoot.queryParam("owner", id).queryParam("name", room.getRoomId());
             Response r = null;
@@ -122,31 +122,31 @@ public class RoomRegistrationHandler {
                 }
                 case 200: {
                     // request succeeded.. we need to parse the result into a JsonObject..
-                    // query url always returns an array, so we need to reach in to obtain our 
-                    // hit. There should only ever be the one, becase we searched by owner and 
+                    // query url always returns an array, so we need to reach in to obtain our
+                    // hit. There should only ever be the one, becase we searched by owner and
                     // name, and rooms should be unique by owner & name;
                     String respString = r.readEntity(String.class);
                     JsonReader reader = Json.createReader(new StringReader(respString));
-                    JsonArray resp = reader.readArray();              
+                    JsonArray resp = reader.readArray();
                     JsonObject queryResponse = resp.getJsonObject(0);
-                    
+
                     //get the id for our already-registered room.
                     String roomId = queryResponse.getString("_id");
-                    
-                    // now we have our id.. make a new request to get our exit wirings.. 
+
+                    // now we have our id.. make a new request to get our exit wirings..
                     queryClient = ClientBuilder.newClient();
                     queryClient.register(new SignedClientRequestFilter(id, secret));
-                    
+
                     WebTarget lookup = queryClient.target(mapLocation);
                     Invocation.Builder builder = lookup.resolveTemplate("roomId", roomId).path("{roomId}").request(MediaType.APPLICATION_JSON);
                     Response response = builder.get();
-                    respString = response.readEntity(String.class);    
-                    
+                    respString = response.readEntity(String.class);
+
                     Log.log(Level.FINE, this, "EXISTING_INFO({0})({1}):{2}", id, room.getRoomId(), respString);
-                    
-                    reader = Json.createReader(new StringReader(respString));                    
+
+                    reader = Json.createReader(new StringReader(respString));
                     queryResponse = reader.readObject();
-                                        
+
                     //save the full response with exit info into the result var.
                     result.type = RegistrationResult.Type.REGISTERED;
                     result.registeredObject = queryResponse;
@@ -180,13 +180,13 @@ public class RoomRegistrationHandler {
             throw new Exception("Error querying room registration", e);
         }
     }
-    
+
     private void handle503() throws Exception{
         try{
             Log.log(Level.INFO, this, "Scheduling room {0} to be registered via bg thread.", room.getRoomId());
             ManagedScheduledExecutorService executor;
-            executor = (ManagedScheduledExecutorService) new InitialContext().lookup("concurrent/execSvc");         
-            
+            executor = (ManagedScheduledExecutorService) new InitialContext().lookup("concurrent/execSvc");
+
             Thread r = new Thread(){
                 public void run() {
                     try{
@@ -195,19 +195,19 @@ public class RoomRegistrationHandler {
                             executor.shutdown();
                         }
                     }catch(Exception e){
-                        //we're in a thread.. documentation for the scheduled executor service says 
+                        //we're in a thread.. documentation for the scheduled executor service says
                         //to throw an exception to terminate the scheduler.. here we go.
                         throw new RuntimeException("Registration Thread Fail",e);
                     }
                 };
             };
-            
+
             executor.scheduleAtFixedRate(r, 10, 10, TimeUnit.SECONDS);
         }catch(Exception e){
             throw new Exception("Error creating scheduler to handle 503 response from map",e);
         }
     }
-    
+
     public boolean performRegistration() throws Exception{
         RegistrationResult existingRegistration = checkExistingRegistration();
         switch(existingRegistration.type){
@@ -230,15 +230,15 @@ public class RoomRegistrationHandler {
                 return true;
             }
             case SERVICE_UNAVAILABLE:{
-                //background thread has been scheduled to re-attempt registration later.                
+                //background thread has been scheduled to re-attempt registration later.
                 return false;
             }
             default:{
                 throw new IllegalStateException("Unknown enum value "+existingRegistration.type.toString());
-            }               
+            }
         }
     }
-    
+
     private void updateRoomWithExits(JsonObject registeredObject) {
         JsonObject exits = registeredObject.getJsonObject("exits");
         Map<String,ExitDesc> exitMap = new HashMap<String,ExitDesc>();
@@ -247,10 +247,10 @@ public class RoomRegistrationHandler {
                 JsonObject j = (JsonObject)e.getValue();
                 //can be null, eg when linking back to firstroom
                 JsonObject c = j.getJsonObject("connectionDetails");
-                ExitDesc exit = new ExitDesc(e.getKey(), 
-                        j.getString("name"), 
-                        j.getString("fullName"), 
-                        j.getString("door"), 
+                ExitDesc exit = new ExitDesc(e.getKey(),
+                        j.getString("name"),
+                        j.getString("fullName"),
+                        j.getString("door"),
                         j.getString("_id"),
                         c!=null?c.getString("type"):null,
                         c!=null?c.getString("target"):null);
@@ -266,7 +266,7 @@ public class RoomRegistrationHandler {
 
     private RegistrationResult compareRoomAndUpdateIfRequired(JsonObject registeredRoom) throws Exception{
         JsonObject info = registeredRoom.getJsonObject("info");
-        
+
         boolean needsUpdate = true;
         if(   room.getRoomId().equals(info.getString("name"))
            && room.getRoomName().equals(info.getString("fullName"))
@@ -276,7 +276,7 @@ public class RoomRegistrationHandler {
             //all good so far =)
             JsonObject doors = info.getJsonObject("doors");
             int count = room.getDoors().size();
-            if(doors!=null && doors.size()==count){                
+            if(doors!=null && doors.size()==count){
                 for(DoorDesc door : room.getDoors()){
                     String description = doors.getString(door.direction.toString().toLowerCase());
                     if(description.equals(door.description)){
@@ -299,10 +299,10 @@ public class RoomRegistrationHandler {
                     if("websocket".equals(connectionDetails.getString("type"))
                        && getEndpointForRoom().equals(connectionDetails.getString("target"))
                        && token.equals(existingToken)){
-                        
+
                         //all good.. no need to update this one.
                         needsUpdate = false;
-                        
+
                     }else{
                         Log.log(Level.INFO,this,"ConnectionDetails mismatch.");
                     }
@@ -315,8 +315,8 @@ public class RoomRegistrationHandler {
         }else{
             Log.log(Level.INFO,this,"Basic room compare failed.");
         }
-        
-        if(needsUpdate){         
+
+        if(needsUpdate){
             System.out.println("Update required for "+room.getRoomId());
             Log.log(Level.INFO,this,"Update required for {0}",room.getRoomId());
             return updateRoom(registeredRoom.getString("_id"));
@@ -326,17 +326,17 @@ public class RoomRegistrationHandler {
             r.type = RegistrationResult.Type.REGISTERED;
             r.registeredObject = registeredRoom;
             return r;
-        }      
+        }
     }
-    
+
     private RegistrationResult registerRoom() throws Exception{
         return registerOrUpdateRoom(Mode.REGISTER, null);
     }
-    
+
     private RegistrationResult updateRoom(String roomId) throws Exception{
         return registerOrUpdateRoom(Mode.UPDATE, roomId);
     }
-    
+
     enum Mode {REGISTER,UPDATE};
     private RegistrationResult registerOrUpdateRoom(Mode mode, String roomId) throws Exception{
         Client postClient = ClientBuilder.newClient();
@@ -344,10 +344,10 @@ public class RoomRegistrationHandler {
         // add our shared secret so all our queries come from the
         // game-on.org id
         postClient.register(new SignedClientRequestFilter(id, secret));
-        
+
         // create the jax-rs 2.0 client
         WebTarget root = postClient.target(mapLocation);
-        
+
         // build the registration/update payload (post data)
         JsonObjectBuilder registrationPayload = Json.createObjectBuilder();
         // add the basic room info.
@@ -389,7 +389,7 @@ public class RoomRegistrationHandler {
             }
         }
         registrationPayload.add("doors", doors.build());
-        
+
         // add the connection info for the room to connect back to us..
         JsonObjectBuilder connInfo = Json.createObjectBuilder();
         connInfo.add("type", "websocket"); // the only current supported
@@ -416,10 +416,10 @@ public class RoomRegistrationHandler {
                 throw new IllegalStateException("Bad enum value "+mode.name());
             }
         }
-        
+
         RegistrationResult r = new RegistrationResult();
         try {
-            
+
             if ( (mode.equals(Mode.REGISTER) && Status.CREATED.getStatusCode() == response.getStatus()) ||
                  (mode.equals(Mode.UPDATE) && Status.OK.getStatusCode() == response.getStatus()) ){
                 String regString = response.readEntity(String.class);
@@ -428,7 +428,7 @@ public class RoomRegistrationHandler {
 
                 r.type = RegistrationResult.Type.REGISTERED;
                 r.registeredObject = registrationResponse;
-                
+
                 Log.log(Level.INFO,this,"Sucessful registration/update operation against ({0})({1})({2}) : {3}",roomId,id,room.getRoomId(),regString);
             } else {
                 String resp = response.readEntity(String.class);
@@ -436,7 +436,7 @@ public class RoomRegistrationHandler {
                 Log.log(Level.SEVERE, "Error registering room provider : {0} : status code {1} : response {2}", room.getRoomName(), response.getStatus(), String.valueOf(resp));
 
                 r.type = RegistrationResult.Type.NOT_REGISTERED;
-                
+
                 throw new Exception("Room operation did not report success, got error code "+response.getStatus()+" "+response.getStatusInfo().getReasonPhrase());
             }
         } finally {
@@ -448,7 +448,7 @@ public class RoomRegistrationHandler {
     private String getEndpointForRoom() {
         return endPoint + "/ws/" +room.getRoomId();
     }
-   
+
     public String getToken() {
         return token;
     }

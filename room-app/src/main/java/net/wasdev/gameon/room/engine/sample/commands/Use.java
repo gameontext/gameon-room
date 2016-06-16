@@ -83,7 +83,7 @@ public class Use extends CommandHandler {
     public String getHelpText(){
         return "Use an item, or use an item **with** another item.";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

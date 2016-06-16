@@ -20,7 +20,7 @@ import java.util.List;
 public class CommandTemplate {
     public final List<CommandTemplate.ParseNode> template;
     public final String key;
-    
+
     public static class ParseNode {
         public Node.Type type;
         public String data;

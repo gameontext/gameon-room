@@ -82,7 +82,7 @@ public class Fuse extends ItemDesc {
 
         /*
          * new ItemCommand(){
-         * 
+         *
          * @Override public void processCommand(ItemDesc item, String execBy,
          * String cmd, Room room) { //allow use of fuse with jukebox //using
          * fuse with jukebox should move it from player inv into jukebox. User u

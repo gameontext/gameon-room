@@ -53,7 +53,7 @@ public class Look extends CommandHandler {
     public String getHelpText(){
         return "Look at the room, **at** an item, or **in** a container.";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

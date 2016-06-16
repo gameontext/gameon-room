@@ -41,7 +41,7 @@ public class ListPlayers extends CommandHandler {
     public String getHelpText(){
         return "List the players in the room.";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

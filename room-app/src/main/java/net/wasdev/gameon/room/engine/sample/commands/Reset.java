@@ -38,7 +38,7 @@ public class Reset extends CommandHandler {
     public String getHelpText(){
         return "Reset the room back to it's default state";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;

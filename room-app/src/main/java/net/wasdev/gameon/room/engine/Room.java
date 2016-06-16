@@ -35,12 +35,12 @@ import net.wasdev.gameon.room.engine.parser.CommandHandler;
 import net.wasdev.gameon.room.engine.parser.CommandTemplate;
 
 public class Room {
-    
+
     public final String TOKEN_ID;
-    private Map<String, ExitDesc> exitMap;    
+    private Map<String, ExitDesc> exitMap;
     private RoomDesc roomDesc;
     private Map<String, User> userMap = new ConcurrentHashMap<String, User>();
-    private Map<String, CommandHandler> commandMap = new HashMap<String, CommandHandler>();    
+    private Map<String, CommandHandler> commandMap = new HashMap<String, CommandHandler>();
     private Room.RoomResponseProcessor rrp = new DebugResponseProcessor();
 
     public interface RoomResponseProcessor {
@@ -114,14 +114,14 @@ public class Room {
         }
         return exitMap;
     }
-    
+
     public Collection<ExitDesc> getExits(){
         return exitMap.values();
     }
 
     public void locationEvent(String senderId, Room room, String roomDescription, Collection<ExitDesc> exits,
-            List<String> objects, List<String> inventory, Map<String,String> commands) {        
-        rrp.locationEvent(senderId, room.getRoomId(), room.getRoomName(), roomDescription, getExitsMap(senderId, room), objects, 
+            List<String> objects, List<String> inventory, Map<String,String> commands) {
+        rrp.locationEvent(senderId, room.getRoomId(), room.getRoomName(), roomDescription, getExitsMap(senderId, room), objects,
                 inventory,commands);
     }
 
@@ -204,7 +204,7 @@ public class Room {
     public Collection<ItemDesc> getItems() {
         return roomDesc.items;
     }
-    
+
     public Collection<DoorDesc> getDoors() {
         return roomDesc.doorways;
     }
@@ -232,7 +232,7 @@ public class Room {
     public void setExits(Map<String, ExitDesc> exitMap) {
         Map<String,ExitDesc> exits = new HashMap<String,ExitDesc>();
         exits.putAll(exitMap);
-        this.exitMap = Collections.unmodifiableMap(exits);        
+        this.exitMap = Collections.unmodifiableMap(exits);
     }
-    
+
 }

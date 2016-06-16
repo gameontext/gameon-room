@@ -80,7 +80,7 @@ public class LogView extends HttpServlet {
             out.println("Directory does not exist to view file from.");
         }
     }
-    
+
 
     private void processViewCommand(HttpServletRequest request, HttpServletResponse response, PrintWriter out)
             throws IOException {
@@ -170,10 +170,10 @@ public class LogView extends HttpServlet {
                             }
 
                             if ("admin".equals(login) && expectedPassword.equals(password)) {
-                                
+
                                 String cmd = request.getParameter("cmd");
                                 PrintWriter out = response.getWriter();
-                                
+
                                 if ("list".equals(cmd)) {
                                     processListCommand(response, out);
                                 } else if ("view".equals(cmd)) {

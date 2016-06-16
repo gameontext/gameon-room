@@ -42,16 +42,16 @@ public class ExitDesc {
             return longName;
         }
     };
-    
-    public final Direction direction; 
+
+    public final Direction direction;
     public final String name;
     public final String fullName;
     public final String targetId;
-    public final String connectionType; 
+    public final String connectionType;
     public final String connectionTarget;
     public final ExitHandler handler;
-    private final String doorDescription; 
-    
+    private final String doorDescription;
+
     public interface ExitHandler {
 
         public String getDescription(ExitDesc exit, Room exitOwner);
@@ -62,7 +62,7 @@ public class ExitDesc {
 
         public boolean isTraversable(String execBy, ExitDesc exit, Room exitOwner);
     }
-    
+
     public ExitDesc(String direction, String name, String fullName, String doorDescription, String targetId,
             String connectionType, String connectionTarget) {
         super();
@@ -87,7 +87,7 @@ public class ExitDesc {
             }
             default:{
                 throw new IllegalArgumentException("Unknown direction "+direction);
-            }                
+            }
         }
         this.name = name;
         this.fullName = fullName;
@@ -95,7 +95,7 @@ public class ExitDesc {
         this.targetId = targetId;
         this.connectionType = connectionType;
         this.connectionTarget = connectionTarget;
-        
+
         this.handler = new ExitHandler() {
             @Override
             public String getDescription(ExitDesc exit, Room exitOwner) {
@@ -146,7 +146,7 @@ public class ExitDesc {
     public String getConnectionTarget() {
         return connectionTarget;
     }
-    
+
     public String toString() {
         return toJsonString();
     }

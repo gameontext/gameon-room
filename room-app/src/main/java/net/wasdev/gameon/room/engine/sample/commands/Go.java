@@ -42,7 +42,7 @@ public class Go extends CommandHandler {
     public String getHelpText(){
         return "Exit the room using the specified exit.";
     }
-    
+
     @Override
     public Set<CommandTemplate> getTemplates() {
         return templates;
