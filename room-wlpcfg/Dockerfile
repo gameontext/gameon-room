@@ -1,15 +1,19 @@
 FROM websphere-liberty:latest
 
-MAINTAINER Ben Smith
+MAINTAINER Erin Schnabel <schnabel@us.ibm.com> (@ebullientworks)
 
-ADD https://download.elastic.co/logstash-forwarder/binaries/logstash-forwarder_linux_amd64 /opt/forwarder
-ADD ./servers/gameon-room /opt/ibm/wlp/usr/servers/defaultServer/
 RUN wget https://github.com/coreos/etcd/releases/download/v2.2.2/etcd-v2.2.2-linux-amd64.tar.gz -q ; \
     tar xzf etcd-v2.2.2-linux-amd64.tar.gz etcd-v2.2.2-linux-amd64/etcdctl --strip-components=1 ; \
     rm etcd-v2.2.2-linux-amd64.tar.gz ; \
     mv etcdctl /usr/local/bin/etcdctl
 
+ADD https://download.elastic.co/logstash-forwarder/binaries/logstash-forwarder_linux_amd64 /opt/forwarder
+
+ENV SERVERDIRNAME room
+
 COPY ./forwarder.conf /opt/forwarder.conf
 COPY ./startup.sh /opt/startup.sh
+
+ADD ./servers/gameon-room /opt/ibm/wlp/usr/servers/defaultServer/
 
 CMD ["/opt/startup.sh"]
