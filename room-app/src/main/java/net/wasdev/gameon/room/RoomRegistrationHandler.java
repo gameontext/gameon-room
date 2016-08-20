@@ -44,7 +44,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.gameontext.signed.SignedClientRequestFilter;
-import org.gameontext.signed.SignedWriterInterceptor;
 
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.meta.DoorDesc;
