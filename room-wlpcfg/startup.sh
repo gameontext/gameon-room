@@ -28,11 +28,11 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   keytool -delete -storepass testOnlyKeystore -alias endeca -keystore security/key.jks
   keytool -v -importkeystore -srcalias 1 -alias 1 -destalias default -noprompt -srcstorepass keystore -deststorepass testOnlyKeystore -srckeypass keystore -destkeypass testOnlyKeystore -srckeystore cert.pkcs12 -srcstoretype PKCS12 -destkeystore security/key.jks -deststoretype JKS
 
-  export service_map=$(etcdctl get /map/url)
+  export service_map=$(etcdctl get /room/mapurl)
   export service_room=$(etcdctl get /room/service)
   export MAP_KEY=$(etcdctl get /passwords/map-key)
   export LOGSTASH_ENDPOINT=$(etcdctl get /logstash/endpoint)
-  export SYSTEM_ID=$(etcdctl get /player/system_id)
+  export SYSTEM_ID=$(etcdctl get /global/system_id)
   export KAFKA_URL=$(etcdctl get /kafka/url)
   export KAFKA_USER=$(etcdctl get /kafka/user)
   export KAFKA_PASSWORD=$(etcdctl get /passwords/kafka)
