@@ -7,20 +7,17 @@ buildscript {
 }
 
 task copyWAR(type: Copy) {
-   from '../auth-app/build/libs/auth-app-1.0.war'
-   into 'servers/gameon-auth/apps/'
-   rename("auth-app-1.0.war", "auth-app.war")
-}
-
-task build(dependsOn: ['copyWAR']){
+   from '../room-app/build/libs/room-app-1.0.war'
+   into 'servers/gameon-room/apps/'
+   rename("room-app-1.0.war", "room-app.war")
 }
 
 task build(dependsOn: ['copyWAR']){
 }
 
 task clean {
-   delete "servers/gameon-auth/apps"
-   delete "servers/gameon-auth/lib"
-   delete "servers/gameon-auth/logs"
-   delete "servers/gameon-auth/workarea"
+   delete "servers/gameon-room/apps"
+   delete "servers/gameon-room/lib"
+   delete "servers/gameon-room/logs"
+   delete "servers/gameon-room/workarea"
 }
