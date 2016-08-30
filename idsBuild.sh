@@ -45,7 +45,7 @@ else
     ../docker stop -t 0 gameon-room || true
     ../docker rm gameon-room || true
     echo Starting new container.
-    ../docker run -d -p 9080:9080 -p 9445:9443 --link etcd -e LICENSE=accept -e ETCDCTL_ENDPOINT=http://etcd:4001 --name=gameon-room gameon-room
+    ../docker run -d -p 9080:9080 -p 9445:9443 --restart=always --link etcd -e LICENSE=accept -e ETCDCTL_ENDPOINT=http://etcd:4001 --name=gameon-room gameon-room
     if [ $? != 0 ]
     then
       echo "Docker run failed.. it's too late.. the damage is done already."
