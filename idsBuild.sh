@@ -34,7 +34,7 @@ then
   exit -1
 else
   cd room-wlpcfg
-  ../docker build -t gameon-room -f Dockerfile.live .
+  ../docker build -t gameon-room -f Dockerfile .
   if [ $? != 0 ]
   then
     echo "Docker build failed, will NOT attempt to stop/rm/start-new-container."
