@@ -1,0 +1,23 @@
+apply plugin: 'eclipse'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+task copyWAR(type: Copy) {
+   from '../room-app/build/libs/room-app-1.0.war'
+   into 'servers/gameon-room/apps/'
+   rename("room-app-1.0.war", "room-app.war")
+}
+
+task build(dependsOn: ['copyWAR']){
+}
+
+task clean {
+   delete "servers/gameon-room/apps"
+   delete "servers/gameon-room/lib"
+   delete "servers/gameon-room/logs"
+   delete "servers/gameon-room/workarea"
+}
