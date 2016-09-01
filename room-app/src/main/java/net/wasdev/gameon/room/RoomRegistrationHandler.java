@@ -33,6 +33,9 @@ import javax.json.JsonReader;
 import javax.json.JsonValue;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -44,7 +47,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.gameontext.signed.SignedClientRequestFilter;
-import org.gameontext.signed.SignedWriterInterceptor;
 
 import net.wasdev.gameon.room.engine.Room;
 import net.wasdev.gameon.room.engine.meta.DoorDesc;
@@ -92,6 +94,13 @@ public class RoomRegistrationHandler {
         public JsonObject registeredObject;
     }
 
+    public class TheNotVerySensibleHostnameVerifier implements HostnameVerifier {
+        @Override
+        public boolean verify(String string, SSLSession sslSession) {
+            return true;
+        }
+    }
+    
     /**
      * Obtain current registration for this room
      * @param roomId
@@ -100,7 +109,9 @@ public class RoomRegistrationHandler {
     private RegistrationResult checkExistingRegistration() throws Exception {
         RegistrationResult result = new RegistrationResult();
         try {
-            Client queryClient = ClientBuilder.newClient();
+            ClientBuilder cbuilder = ClientBuilder.newBuilder().sslContext(SSLContext.getDefault());
+            cbuilder.hostnameVerifier(new TheNotVerySensibleHostnameVerifier());
+            Client queryClient = cbuilder.newClient();
 
             // add our request signer
             queryClient.register(new SignedClientRequestFilter(id, secret));
@@ -339,7 +350,9 @@ public class RoomRegistrationHandler {
 
     enum Mode {REGISTER,UPDATE};
     private RegistrationResult registerOrUpdateRoom(Mode mode, String roomId) throws Exception{
-        Client postClient = ClientBuilder.newClient();
+        ClientBuilder cbuilder = ClientBuilder.newBuilder().sslContext(SSLContext.getDefault());
+        cbuilder.hostnameVerifier(new TheNotVerySensibleHostnameVerifier());
+        Client postClient = cbuilder.newClient();
 
         // add our shared secret so all our queries come from the
         // game-on.org id
