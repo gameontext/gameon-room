@@ -100,7 +100,23 @@ public class RoomRegistrationHandler {
             return true;
         }
     }
-    
+
+    /**
+     * Obtain a jaxrs client configured appropriately for ssl to map.
+     */
+    private Client getClient() throws Exception{
+
+      //Build client that uses the SSLContext defined by 'DefaultSSLSettings' in server.xml
+      Client client = ClientBuilder.newBuilder()
+                                     .property("com.ibm.ws.jaxrs.client.ssl.config", "DefaultSSLSettings")
+                                     .property("com.ibm.ws.jaxrs.client.disableCNCheck", true)
+                                     .build();
+      // add our request signer
+      client.register(new SignedClientRequestFilter(id, secret));
+
+      return client;
+    }
+
     /**
      * Obtain current registration for this room
      * @param roomId
@@ -109,12 +125,7 @@ public class RoomRegistrationHandler {
     private RegistrationResult checkExistingRegistration() throws Exception {
         RegistrationResult result = new RegistrationResult();
         try {
-            ClientBuilder cbuilder = ClientBuilder.newBuilder().sslContext(SSLContext.getDefault());
-            cbuilder.hostnameVerifier(new TheNotVerySensibleHostnameVerifier());
-            Client queryClient = cbuilder.newClient();
-
-            // add our request signer
-            queryClient.register(new SignedClientRequestFilter(id, secret));
+            Client queryClient = getClient();
 
             // create the jax-rs 2.0 client
             WebTarget queryRoot = queryClient.target(mapLocation);
@@ -145,8 +156,7 @@ public class RoomRegistrationHandler {
                     String roomId = queryResponse.getString("_id");
 
                     // now we have our id.. make a new request to get our exit wirings..
-                    queryClient = ClientBuilder.newClient();
-                    queryClient.register(new SignedClientRequestFilter(id, secret));
+                    queryClient = getClient();
 
                     WebTarget lookup = queryClient.target(mapLocation);
                     Invocation.Builder builder = lookup.resolveTemplate("roomId", roomId).path("{roomId}").request(MediaType.APPLICATION_JSON);
@@ -350,13 +360,7 @@ public class RoomRegistrationHandler {
 
     enum Mode {REGISTER,UPDATE};
     private RegistrationResult registerOrUpdateRoom(Mode mode, String roomId) throws Exception{
-        ClientBuilder cbuilder = ClientBuilder.newBuilder().sslContext(SSLContext.getDefault());
-        cbuilder.hostnameVerifier(new TheNotVerySensibleHostnameVerifier());
-        Client postClient = cbuilder.newClient();
-
-        // add our shared secret so all our queries come from the
-        // game-on.org id
-        postClient.register(new SignedClientRequestFilter(id, secret));
+        Client postClient = getClient();
 
         // create the jax-rs 2.0 client
         WebTarget root = postClient.target(mapLocation);
