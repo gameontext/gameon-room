@@ -6,7 +6,7 @@
 
 #!/bin/bash
 echo Informing slack...
-curl -X 'POST' --silent --data-binary '{"text":"A new build for the room service has started."}' $WEBHOOK > /dev/null
+curl -X 'POST' --silent --data-binary '{"text":"A new build for the room service has started."}' $SLACK_WEBHOOK_PATH > /dev/null
 
 echo Setting up Docker...
 mkdir dockercfg ; cd dockercfg
@@ -30,7 +30,7 @@ echo Building projects using gradle...
 if [ $? != 0 ]
 then
   echo "Gradle build failed, will NOT perform Docker steps."
-  curl -X 'POST' --silent --data-binary '{"text":"Build for the room service has failed."}' $WEBHOOK > /dev/null
+  curl -X 'POST' --silent --data-binary '{"text":"Build for the room service has failed."}' $SLACK_WEBHOOK_PATH > /dev/null
   exit -1
 else
   cd room-wlpcfg
