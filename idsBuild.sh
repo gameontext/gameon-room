@@ -38,7 +38,7 @@ else
   if [ $? != 0 ]
   then
     echo "Docker build failed, will NOT attempt to stop/rm/start-new-container."
-    curl -X 'POST' --silent --data-binary '{"text":"Docker Build for the room service has failed."}' $WEBHOOK > /dev/null
+    curl -X 'POST' --silent --data-binary '{"text":"Docker Build for the room service has failed."}' $SLACK_WEBHOOK_PATH > /dev/null
     exit -2
   else
     echo Attempting to remove old containers.
@@ -49,7 +49,7 @@ else
     if [ $? != 0 ]
     then
       echo "Docker run failed.. it's too late.. the damage is done already."
-      curl -X 'POST' --silent --data-binary '{"text":"Docker Run for the room service has failed."}' $WEBHOOK > /dev/null
+      curl -X 'POST' --silent --data-binary '{"text":"Docker Run for the room service has failed."}' $SLACK_WEBHOOK_PATH > /dev/null
       exit -3
     else
       cd ..
