@@ -38,12 +38,12 @@
 
   <applicationMonitor dropinsEnabled="false" updateTrigger="polled"/>
 
-  <logging traceSpecification="*=info:org.gameon.*=all:org.gameontext.*=all"/>
+  <logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all:org.gameontext.*=all"/>
 
   <!-- This is required to prevent the web apps from being lazily loaded -->
   <webContainer deferServletLoad="false"/>
   <!-- The JVM can get confused about available CPU in virtualized envs -->
-  <executor coreThreads="10"  />
+  <executor coreThreads="5"  />
 
   <webApplication id="room-app" location="room-app.war" name="room-app"/>
 </server>
