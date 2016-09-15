@@ -36,9 +36,11 @@
   <!-- Executor used by RoomRegistration because it can't use CDI -->
   <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
 
-  <applicationMonitor dropinsEnabled="false" updateTrigger="polled"/>
+  <!-- turn off polling -->
+  <config updateTrigger="mbean" />
+  <applicationMonitor dropinsEnabled="false" updateTrigger="mbean"/>
 
-  <logging consoleLogLevel="INFO" traceSpecification="*=info:net.wasdev.gameon.*=all:org.gameontext.*=all"/>
+  <logging traceSpecification="*=info:org.gameontext.*=all:net.wasdev.*=all"/>
 
   <!-- This is required to prevent the web apps from being lazily loaded -->
   <webContainer deferServletLoad="false"/>
