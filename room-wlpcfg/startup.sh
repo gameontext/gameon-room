@@ -3,6 +3,20 @@
 export DOCKER_IP="$(ifconfig eth0 | grep "inet addr" | awk '{print substr($2,6)}')"
 echo "Docker assigned IP = $DOCKER_IP"
 
+if [ "$SERVERDIRNAME" == "" ]; then
+  SERVERDIRNAME=defaultServer
+else
+  # Share the configuration directory via symlink
+  ln -s /opt/ibm/wlp/usr/servers/defaultServer /opt/ibm/wlp/usr/servers/$SERVERDIRNAME
+
+  # move the convenience output dir link to the new output location
+  rm /output
+  ln -s $WLP_OUTPUT_DIR/$SERVERDIRNAME /output
+fi
+
+SERVER_PATH=/opt/ibm/wlp/usr/servers/$SERVERDIRNAME
+mkdir -p ${SERVER_PATH}/configDropins/overrides
+
 if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   echo Setting up etcd...
   echo "** Testing etcd is accessible"
@@ -19,14 +33,15 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   done
   echo "etcdctl returned sucessfully, continuing"
 
-  mkdir -p /opt/ibm/wlp/usr/servers/defaultServer/resources/security
-  cd /opt/ibm/wlp/usr/servers/defaultServer/resources/
+  mkdir -p ${SERVER_PATH}/resources/security
+  cd ${SERVER_PATH}/resources/
   etcdctl get /proxy/third-party-ssl-cert > cert.pem
   openssl pkcs12 -passin pass:keystore -passout pass:keystore -export -out cert.pkcs12 -in cert.pem
   keytool -import -v -trustcacerts -alias default -file cert.pem -storepass truststore -keypass keystore -noprompt -keystore security/truststore.jks
   keytool -genkey -storepass testOnlyKeystore -keypass wefwef -keyalg RSA -alias endeca -keystore security/key.jks -dname CN=rsssl,OU=unknown,O=unknown,L=unknown,ST=unknown,C=CA
   keytool -delete -storepass testOnlyKeystore -alias endeca -keystore security/key.jks
   keytool -v -importkeystore -srcalias 1 -alias 1 -destalias default -noprompt -srcstorepass keystore -deststorepass testOnlyKeystore -srckeypass keystore -destkeypass testOnlyKeystore -srckeystore cert.pkcs12 -srcstoretype PKCS12 -destkeystore security/key.jks -deststoretype JKS
+  cd ${SERVER_PATH}
 
   export service_map=$(etcdctl get /room/mapurl)
   export service_room=$(etcdctl get /room/service)
@@ -39,29 +54,10 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
 
   #to run with message hub, we need a jaas jar we can only obtain
   #from github, and have to use an extra config snippet to enable it.
-  cd /opt/ibm/wlp/usr/servers/defaultServer
-  mkdir -p configDropins/overrides
-  mv kafkaDropin.xml configDropins/overrides
+  mv ${SERVER_PATH}/configDropins/messageHub.xml ${SERVER_PATH}/configDropins/overrides
   wget https://github.com/ibm-messaging/message-hub-samples/raw/master/java/message-hub-liberty-sample/lib-message-hub/messagehub.login-1.0.0.jar
 
-  # Softlayer needs a logstash endpoint so we set up the server
-  # to run in the background and the primary task is running the
-  # forwarder. In ICS, Liberty is the primary task so we need to
-  # run it in the foreground
-  if [ "$LOGSTASH_ENDPOINT" != "" ]; then
-    /opt/ibm/wlp/bin/server start defaultServer
-    echo Starting the logstash forwarder...
-    sed -i s/PLACEHOLDER_LOGHOST/${LOGSTASH_ENDPOINT}/g /opt/forwarder.conf
-    cd /opt
-    chmod +x ./forwarder
-    etcdctl get /logstash/cert > logstash-forwarder.crt
-    etcdctl get /logstash/key > logstash-forwarder.key
-    sleep 0.5
-    ./forwarder --config ./forwarder.conf
-  else
-    exec /opt/ibm/wlp/bin/server run defaultServer
-  fi
-
+  exec /opt/ibm/wlp/bin/server run defaultServer
 else
   exec /opt/ibm/wlp/bin/server run defaultServer
 fi
