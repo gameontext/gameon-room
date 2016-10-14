@@ -1,17 +1,8 @@
 #!/bin/bash
 
-if [ "$SERVERDIRNAME" == "" ]; then
-  SERVERDIRNAME=defaultServer
-else
-  # Share the configuration directory via symlink
-  ln -s /opt/ibm/wlp/usr/servers/defaultServer /opt/ibm/wlp/usr/servers/$SERVERDIRNAME
+export CONTAINER_NAME=recroom
 
-  # move the convenience output dir link to the new output location
-  rm /output
-  ln -s $WLP_OUTPUT_DIR/$SERVERDIRNAME /output
-fi
-
-SERVER_PATH=/opt/ibm/wlp/usr/servers/$SERVERDIRNAME
+SERVER_PATH=/opt/ibm/wlp/usr/servers/defaultServer
 mkdir -p ${SERVER_PATH}/configDropins/overrides
 
 if [ "$ETCDCTL_ENDPOINT" != "" ]; then
