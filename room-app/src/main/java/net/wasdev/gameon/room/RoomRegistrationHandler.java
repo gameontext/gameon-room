@@ -218,8 +218,8 @@ public class RoomRegistrationHandler {
     }
     
     private class RegisterRunnable implements Runnable {
-        Future<?> f = null;
-        volatile boolean done = false;
+        private Future<?> f = null;
+        private volatile boolean done = false;
 
         // Allow runnable to cancel itself.
         public void setFuture(Future<?> f) {
