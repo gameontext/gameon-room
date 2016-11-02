@@ -208,13 +208,10 @@ public class RoomRegistrationHandler {
             ManagedScheduledExecutorService executor;
             executor = (ManagedScheduledExecutorService) new InitialContext().lookup("concurrent/execSvc");
 
-            Thread r = new Thread(){
+            Runnable r = new Runnable(){
                 public void run() {
                     try{
                         Log.log(Level.INFO, this, "Registration thread for room {0} has awoken.", room.getRoomId());
-                        if(performRegistration()){
-                            executor.shutdown();
-                        }
                     }catch(Exception e){
                         //we're in a thread.. documentation for the scheduled executor service says
                         //to throw an exception to terminate the scheduler.. here we go.
