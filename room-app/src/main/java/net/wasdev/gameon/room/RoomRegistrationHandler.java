@@ -20,6 +20,7 @@ import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -34,7 +35,6 @@ import javax.json.JsonValue;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
@@ -208,25 +208,44 @@ public class RoomRegistrationHandler {
             ManagedScheduledExecutorService executor;
             executor = (ManagedScheduledExecutorService) new InitialContext().lookup("concurrent/execSvc");
 
-            Thread r = new Thread(){
-                public void run() {
-                    try{
-                        Log.log(Level.INFO, this, "Registration thread for room {0} has awoken.", room.getRoomId());
-                        if(performRegistration()){
-                            executor.shutdown();
-                        }
-                    }catch(Exception e){
-                        //we're in a thread.. documentation for the scheduled executor service says
-                        //to throw an exception to terminate the scheduler.. here we go.
-                        throw new RuntimeException("Registration Thread Fail",e);
-                    }
-                };
-            };
-
-            executor.scheduleAtFixedRate(r, 10, 10, TimeUnit.SECONDS);
+            RegisterRunnable r = new RegisterRunnable();
+            Future<?> f = executor.scheduleAtFixedRate(r, 10, 10, TimeUnit.SECONDS);
+            r.setFuture(f);
+            
         }catch(Exception e){
             throw new Exception("Error creating scheduler to handle 503 response from map",e);
         }
+    }
+    
+    private class RegisterRunnable implements Runnable {
+        Future<?> f = null;
+        volatile boolean done = false;
+
+        // Allow runnable to cancel itself.
+        public void setFuture(Future<?> f) {
+            if ( done && !f.isCancelled() ) {
+                f.cancel(true);
+            }
+            
+            this.f = f;
+        }
+        
+        public void run() {
+            try{
+                Log.log(Level.INFO, this, "Registration thread for room {0} has awoken.", room.getRoomId());
+                
+                if(performRegistration()) {
+                    done = true;
+                    
+                    if ( f != null && !f.isCancelled() )
+                        f.cancel(true);
+                }
+            }catch(Exception e){
+                //we're in a thread.. documentation for the scheduled executor service says
+                //to throw an exception to terminate the scheduler.. here we go.
+                throw new RuntimeException("Registration Thread Fail",e);
+            }
+        };        
     }
 
     public boolean performRegistration() throws Exception{
