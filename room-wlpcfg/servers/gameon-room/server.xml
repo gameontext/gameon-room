@@ -31,7 +31,7 @@
   <!-- <jndiEntry jndiName="RecRoom_token" value="kayleigh"/> -->
 
   <!-- kafka config.. (userid/password is used by config dropin, not needed as jndi var)-->
-  <jndiEntry jndiName="kafkaUrl" value="${env.KAFKA_URL}"/>
+  <jndiEntry jndiName="kafkaUrl" value="${env.KAFKA_SERVICE_URL}"/>
 
   <!-- Executor used by RoomRegistration because it can't use CDI -->
   <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
