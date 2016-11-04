@@ -31,7 +31,7 @@
   <!-- <jndiEntry jndiName="RecRoom_token" value="kayleigh"/> -->
 
   <!-- kafka config.. (userid/password is used by config dropin, not needed as jndi var)-->
-  <jndiEntry jndiName="kafkaUrl" value="${env.KAFKA_URL}"/>
+  <jndiEntry jndiName="kafkaUrl" value="${env.KAFKA_SERVICE_URL}"/>
 
   <!-- Executor used by RoomRegistration because it can't use CDI -->
   <managedScheduledExecutorService jndiName="concurrent/execSvc"/>
@@ -48,4 +48,11 @@
   <executor coreThreads="5"  />
 
   <webApplication id="room-app" location="room-app.war" name="room-app"/>
+
+  <jndiEntry jndiName="developmentMode" value="${env.GAMEON_MODE}"/>
+  <jndiEntry jndiName="targetPlatform" value="${env.TARGET_PLATFORM}"/>
+  <include location="${env.TARGET_PLATFORM}-config.xml" optional="true" />
+  <include location="${env.TARGET_PLATFORM}-logCollector.xml" optional="true" />
+  <include location="${env.TARGET_PLATFORM}-messageHub.xml" optional="true" />
+
 </server>

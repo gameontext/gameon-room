@@ -3,7 +3,6 @@
 export CONTAINER_NAME=recroom
 
 SERVER_PATH=/opt/ibm/wlp/usr/servers/defaultServer
-mkdir -p ${SERVER_PATH}/configDropins/overrides
 
 if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   echo Setting up etcd...
@@ -36,13 +35,16 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   export MAP_KEY=$(etcdctl get /passwords/map-key)
   export LOGSTASH_ENDPOINT=$(etcdctl get /logstash/endpoint)
   export SYSTEM_ID=$(etcdctl get /global/system_id)
-  export KAFKA_URL=$(etcdctl get /kafka/url)
-  export KAFKA_USER=$(etcdctl get /kafka/user)
-  export KAFKA_PASSWORD=$(etcdctl get /passwords/kafka)
+  export KAFKA_SERVICE_URL=$(etcdctl get /kafka/url)
+  export MESSAGEHUB_USER=$(etcdctl get /kafka/user)
+  export MESSAGEHUB_PASSWORD=$(etcdctl get /passwords/kafka)
+
+  GAMEON_MODE=$(etcdctl get /global/mode)
+  export GAMEON_MODE=${GAMEON_MODE:-production}
+  export TARGET_PLATFORM=$(etcdctl get /global/targetPlatform)
 
   #to run with message hub, we need a jaas jar we can only obtain
   #from github, and have to use an extra config snippet to enable it.
-  mv ${SERVER_PATH}/configDropins/messageHub.xml ${SERVER_PATH}/configDropins/overrides
   wget https://github.com/ibm-messaging/message-hub-samples/raw/master/java/message-hub-liberty-sample/lib-message-hub/messagehub.login-1.0.0.jar
 
   exec /opt/ibm/wlp/bin/server run defaultServer
