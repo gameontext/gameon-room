@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Configure our link to etcd based on shared volume with secret
+if [ ! -z "$ETCD_SECRET" ]; then
+  . /data/primordial/setup.etcd.sh /data/primordial $ETCD_SECRET
+fi
+
 export CONTAINER_NAME=recroom
 
 SERVER_PATH=/opt/ibm/wlp/usr/servers/defaultServer
