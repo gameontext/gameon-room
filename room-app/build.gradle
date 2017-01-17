@@ -13,7 +13,6 @@ dependencies {
     providedCompile 'javax.enterprise:cdi-api:1.2'
     providedCompile 'javax.enterprise.concurrent:javax.enterprise.concurrent-api:1.0'
     compile 'org.mongodb:mongo-java-driver:2.12.3'
-    compile project(':app-common')
 
     compile 'com.github.gameontext:signed:v1.0.3'
 

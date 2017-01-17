@@ -1,5 +1,4 @@
 rootProject.name = 'gameon-room'
 
-include 'app-common'
 include 'room-app'
 include 'room-wlpcfg'
