@@ -76,4 +76,4 @@ And having that understanding is half the battle to deciding what you should wor
 
 Want to help! Pile On! 
 
-[Contributing to Game On!](https://github.com/gameontext/gameon/blob/master/CONTRIBUTING.md)
+[Contributing to Game On!](CONTRIBUTING.md)
