@@ -68,15 +68,15 @@ public class RoomRegistrationHandler {
         this.room=room;
         this.secret=secret;
 
-        endPoint = System.getProperty(Constants.ENV_ROOM_SVC, System.getenv(Constants.ENV_ROOM_SVC));
+        endPoint = System.getenv(Constants.ENV_ROOM_SVC);
         if (endPoint == null) {
-            throw new IllegalStateException("The location for the room service cold not be "
-                    + "found in a system property or environment variable named : " + Constants.ENV_ROOM_SVC);
+            throw new IllegalStateException("The environment variable " + Constants.ENV_ROOM_SVC
+                    + " was not defined.");
         }
-        mapLocation = System.getProperty(Constants.ENV_MAP_SVC, System.getenv(Constants.ENV_MAP_SVC));
+        mapLocation = System.getenv(Constants.ENV_MAP_SVC);
         if (mapLocation == null) {
-            throw new IllegalStateException("The location for the map service cold not be "
-                    + "found in a system property or environment variable named : " + Constants.ENV_MAP_SVC);
+            throw new IllegalStateException("The environment variable " + Constants.ENV_ROOM_SVC
+                    + " was not defined.");
         }
 
         String value = "";
@@ -211,12 +211,12 @@ public class RoomRegistrationHandler {
             RegisterRunnable r = new RegisterRunnable();
             Future<?> f = executor.scheduleAtFixedRate(r, 10, 10, TimeUnit.SECONDS);
             r.setFuture(f);
-            
+
         }catch(Exception e){
             throw new Exception("Error creating scheduler to handle 503 response from map",e);
         }
     }
-    
+
     private class RegisterRunnable implements Runnable {
         private Future<?> f = null;
         private volatile boolean done = false;
@@ -226,17 +226,17 @@ public class RoomRegistrationHandler {
             if ( done && !f.isCancelled() ) {
                 f.cancel(true);
             }
-            
+
             this.f = f;
         }
-        
+
         public void run() {
             try{
                 Log.log(Level.INFO, this, "Registration thread for room {0} has awoken.", room.getRoomId());
-                
+
                 if(performRegistration()) {
                     done = true;
-                    
+
                     if ( f != null && !f.isCancelled() )
                         f.cancel(true);
                 }
@@ -245,7 +245,7 @@ public class RoomRegistrationHandler {
                 //to throw an exception to terminate the scheduler.. here we go.
                 throw new RuntimeException("Registration Thread Fail",e);
             }
-        };        
+        };
     }
 
     public boolean performRegistration() throws Exception{

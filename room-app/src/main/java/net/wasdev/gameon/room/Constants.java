@@ -28,7 +28,11 @@ public interface Constants {
     String EXITS = "exits";
     String EXITID = "exitId";
     String STATE = "state";
+
     //env var names
-    String ENV_ROOM_SVC = "service_room";
-    String ENV_MAP_SVC = "service_map";
+    String ENV_ROOM_SVC = "RECROOM_SERVICE_URL";
+    String ENV_MAP_SVC = "MAP_SERVICE_URL";
+
+    String JNDI_REGISTRATION_SECRET = "mapApiKey";
+    String JNDI_SYSTEM_ID = "systemId";
 }

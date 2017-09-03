@@ -227,8 +227,8 @@ public class LifecycleManager implements ServerApplicationConfig {
 
     private void getConfig() {
         try {
-            registrationSecret = (String) new InitialContext().lookup("registrationSecret");
-            systemId = (String) new InitialContext().lookup("systemId");
+            registrationSecret = (String) new InitialContext().lookup(Constants.JNDI_REGISTRATION_SECRET);
+            systemId = (String) new InitialContext().lookup(Constants.JNDI_SYSTEM_ID);
         } catch (NamingException e) {
         }
         if (registrationSecret == null || systemId == null) {

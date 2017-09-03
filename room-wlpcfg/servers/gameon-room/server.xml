@@ -23,7 +23,10 @@
   <ssl id="DefaultSSLSettings" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" />
 
   <!-- Our key that allows us to register rooms -->
-  <jndiEntry jndiName="registrationSecret" value="${env.MAP_KEY}"/>
+  <jndiEntry jndiName="mapUrl" value="${env.MAP_SERVICE_URL}"/>
+  <jndiEntry jndiName="mapApiKey" value="${env.MAP_KEY}"/>
+
+  <jndiEntry jndiName="recRoomUrl" value="${env.RECROOM_SERVICE_URL}"/>
 
   <jndiEntry jndiName="systemId" value="${env.SYSTEM_ID}"/>
 
