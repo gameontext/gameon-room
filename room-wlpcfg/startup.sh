@@ -38,7 +38,6 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   export service_map=$(etcdctl get /room/mapurl)
   export service_room=$(etcdctl get /room/service)
   export MAP_KEY=$(etcdctl get /passwords/map-key)
-  export LOGSTASH_ENDPOINT=$(etcdctl get /logstash/endpoint)
   export SYSTEM_ID=$(etcdctl get /global/system_id)
 
   GAMEON_MODE=$(etcdctl get /global/mode)
