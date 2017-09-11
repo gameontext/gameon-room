@@ -2,7 +2,35 @@
 
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/0c29c501ba11477f944e109b85817593)](https://www.codacy.com/app/gameontext/gameon-room)
 
-See the room service [information page](https://gameontext.gitbooks.io/gameon-gitbook/content/microservices/room.html) in the Game On! Docs for more information on how to use this service.
+
+See the [application architecture description](https://gameontext.gitbooks.io/gameon-gitbook/content/microservices/) in the Game On! Docs for more information on how to use this service.
+
+
+## Building
+
+To build this project: 
+
+    ./gradlew build
+    docker build -t gameontext/gameon-room room-wlpcfg
+
+## Contributing
+
+Want to help! Pile On! 
+
+[Contributing to Game On!](CONTRIBUTING.md)
+
+## Implementation details
+
+The general idea with the entire project is that the sample folder can be swapped out to drop in a set of rooms with entirely different content.. it's a great way to setup rooms etc, sadly however it does not really help much with Game On beyond just providing fun content. So it's not something we've ever pushed very hard. 
+
+It should be possible to turn the entire project without 'Sample' into a jitpack style library, where you could have simple github projects that just contain the equivalent of the sample package.. 
+
+It may seem odd this room is so far ahead, and yet we've not done much with it, but by driving a room this far, you get a feel for what would be required to implement things like;
+ -  a parser service, to free all other rooms from having to write yet another string interpreter.. 
+ -  an inventory service, to allow items to be carried between rooms.. (the inventory part is easy, but handling how/if `/use` should function on a foreign object in a room is hard)
+ -  where state should live for items / players
+ -  admin status.. (check the `/reset` command in RecRoom)
+And having that understanding is half the battle to deciding what you should work on next =)
 
 ---
 
@@ -57,23 +85,4 @@ There are a couple more tricks hidden in there that are kind of fun.. it's worth
 
 It may be worth noting also that Cupboard is an instance of a ContainerDesc which extends ItemDesc, so it can provide an AccessHandler, which is tested by the TAKE command, and EXAMINE command to know if the player is allowed to perform that action. 
 
----
 
-The general idea with the entire project is that the sample folder can be swapped out to drop in a set of rooms with entirely different content.. it's a great way to setup rooms etc, sadly however it does not really help much with Game On beyond just providing fun content. So it's not something we've ever pushed very hard. 
-
-It should be possible to turn the entire project without 'Sample' into a jitpack style library, where you could have simple github projects that just contain the equivalent of the sample package.. 
-
-It may seem odd this room is so far ahead, and yet we've not done much with it, but by driving a room this far, you get a feel for what would be required to implement things like;
- -  a parser service, to free all other rooms from having to write yet another string interpreter.. 
- -  an inventory service, to allow items to be carried between rooms.. (the inventory part is easy, but handling how/if `/use` should function on a foreign object in a room is hard)
- -  where state should live for items / players
- -  admin status.. (check the `/reset` command in RecRoom)
-And having that understanding is half the battle to deciding what you should work on next =)
-
-
-
-## Contributing
-
-Want to help! Pile On! 
-
-[Contributing to Game On!](CONTRIBUTING.md)
