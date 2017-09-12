@@ -32,6 +32,7 @@ public interface Constants {
     //env var names
     String ENV_ROOM_SVC = "RECROOM_SERVICE_URL";
     String ENV_MAP_SVC = "MAP_SERVICE_URL";
+    String ENV_MAP_HEALTH_SVC = "MAP_HEALTH_SERVICE_URL";
 
     String JNDI_REGISTRATION_SECRET = "mapApiKey";
     String JNDI_SYSTEM_ID = "systemId";
