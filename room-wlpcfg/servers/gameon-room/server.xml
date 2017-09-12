@@ -22,8 +22,9 @@
   <sslDefault sslRef="DefaultSSLSettings" />
   <ssl id="DefaultSSLSettings" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" />
 
-  <!-- Our key that allows us to register rooms -->
   <jndiEntry jndiName="mapUrl" value="${env.MAP_SERVICE_URL}"/>
+  <jndiEntry jndiName="mapHealthUrl" value="${env.MAP_HEALTH_SERVICE_URL}"/>
+  <!-- Our key that allows us to register rooms -->
   <jndiEntry jndiName="mapApiKey" value="${env.MAP_KEY}"/>
 
   <jndiEntry jndiName="recRoomUrl" value="${env.RECROOM_SERVICE_URL}"/>

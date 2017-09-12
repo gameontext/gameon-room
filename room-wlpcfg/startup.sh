@@ -35,8 +35,9 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   keytool -v -importkeystore -srcalias 1 -alias 1 -destalias default -noprompt -srcstorepass keystore -deststorepass testOnlyKeystore -srckeypass keystore -destkeypass testOnlyKeystore -srckeystore cert.pkcs12 -srcstoretype PKCS12 -destkeystore security/key.jks -deststoretype JKS
   cd ${SERVER_PATH}
 
-  export service_map=$(etcdctl get /room/mapurl)
-  export service_room=$(etcdctl get /room/service)
+  export RECROOM_SERVICE_URL=$(etcdctl get /room/service)
+  export MAP_SERVICE_URL=$(etcdctl get /room/mapurl)
+  export MAP_HEALTH_SERVICE_URL=$(etcdctl get /room/maphealth)
   export MAP_KEY=$(etcdctl get /passwords/map-key)
   export SYSTEM_ID=$(etcdctl get /global/system_id)
 

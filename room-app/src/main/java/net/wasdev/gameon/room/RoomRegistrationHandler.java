@@ -16,6 +16,7 @@
 package net.wasdev.gameon.room;
 
 import java.io.StringReader;
+import java.lang.RuntimeException;
 import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,9 +59,13 @@ public class RoomRegistrationHandler {
     private final String secret;
     private final String endPoint;
     private final String mapLocation;
+    private final String mapHealth;
+
     private final Room room;
     private AtomicBoolean handling503 = new AtomicBoolean(false);
     private final String token;
+
+    private final Client cleanClient;
 
 
     RoomRegistrationHandler(Room room, String id, String secret){
@@ -75,7 +80,12 @@ public class RoomRegistrationHandler {
         }
         mapLocation = System.getenv(Constants.ENV_MAP_SVC);
         if (mapLocation == null) {
-            throw new IllegalStateException("The environment variable " + Constants.ENV_ROOM_SVC
+            throw new IllegalStateException("The environment variable " + Constants.ENV_MAP_SVC
+                    + " was not defined.");
+        }
+        mapHealth = System.getenv(Constants.ENV_MAP_HEALTH_SVC);
+        if (mapLocation == null) {
+            throw new IllegalStateException("The environment variable " + Constants.ENV_MAP_HEALTH_SVC
                     + " was not defined.");
         }
 
@@ -86,13 +96,25 @@ public class RoomRegistrationHandler {
             //a token does not have to be defined for a given room
         }
         token = (value == null ? "" : value);
+
+        cleanClient = ClientBuilder.newBuilder()
+                                       .property("com.ibm.ws.jaxrs.client.ssl.config", "DefaultSSLSettings")
+                                       .property("com.ibm.ws.jaxrs.client.disableCNCheck", true)
+                                       .build();
     }
 
     private static class RegistrationResult {
         enum Type { NOT_REGISTERED, REGISTERED, SERVICE_UNAVAILABLE };
         public Type type;
         public JsonObject registeredObject;
+
+        RegistrationResult() {}
+        RegistrationResult(Type type) {
+            this.type = type;
+        }
     }
+
+    private static RegistrationResult MAP_UNAVAILABLE = new RegistrationResult(RegistrationResult.Type.SERVICE_UNAVAILABLE);
 
     public class TheNotVerySensibleHostnameVerifier implements HostnameVerifier {
         @Override
@@ -123,6 +145,16 @@ public class RoomRegistrationHandler {
      * @return
      */
     private RegistrationResult checkExistingRegistration() throws Exception {
+
+        // If map service isn't healthy yet, don't even bother (but make sure
+        // to try again later!)
+        if ( ! mapIsHealthy() ) {
+            if (handling503.compareAndSet(false, true)) {
+                handle503();
+            }
+            return MAP_UNAVAILABLE;
+        }
+
         RegistrationResult result = new RegistrationResult();
         try {
             Client queryClient = getClient();
@@ -370,11 +402,35 @@ public class RoomRegistrationHandler {
     }
 
     private RegistrationResult registerRoom() throws Exception{
-        return registerOrUpdateRoom(Mode.REGISTER, null);
+        if ( mapIsHealthy() ) {
+            return registerOrUpdateRoom(Mode.REGISTER, null);
+        } else {
+            return MAP_UNAVAILABLE;
+        }
     }
 
     private RegistrationResult updateRoom(String roomId) throws Exception{
-        return registerOrUpdateRoom(Mode.UPDATE, roomId);
+        if ( mapIsHealthy() ) {
+            return registerOrUpdateRoom(Mode.UPDATE, roomId);
+        } else {
+            return MAP_UNAVAILABLE;
+        }
+    }
+
+    private boolean mapIsHealthy() throws Exception {
+        try {
+            Response response = cleanClient.target(mapHealth)
+                                    .request(MediaType.APPLICATION_JSON)
+                                    .get();
+            response.close();
+            int code = response.getStatusInfo().getStatusCode();
+
+            Log.log(Level.FINE, this, "Checked map service health : {0}", Integer.toString(code));
+            return code == 200;
+        } catch ( Exception e ) {
+            Log.log(Level.SEVERE, this, "Error checking map service health : {0}", e.toString());
+            return false;
+        }
     }
 
     enum Mode {REGISTER,UPDATE};
@@ -437,20 +493,26 @@ public class RoomRegistrationHandler {
         registrationPayload.add("connectionDetails", connInfo.build());
 
         Response response=null;
-        switch(mode){
-            case REGISTER:{
-                Invocation.Builder builder = root.request(MediaType.APPLICATION_JSON);
-                response = builder.post(Entity.json(registrationPayload.build()));
-                break;
+        try {
+            switch(mode){
+                case REGISTER:{
+                    Invocation.Builder builder = root.request(MediaType.APPLICATION_JSON);
+                    response = builder.post(Entity.json(registrationPayload.build()));
+                    break;
+                }
+                case UPDATE:{
+                    Invocation.Builder builder = root.path("{roomId}").resolveTemplate("roomId", roomId).request(MediaType.APPLICATION_JSON);
+                    response = builder.put(Entity.json(registrationPayload.build()));
+                    break;
+                }
+                default:{
+                    throw new IllegalStateException("Bad enum value "+mode.name());
+                }
             }
-            case UPDATE:{
-                Invocation.Builder builder = root.path("{roomId}").resolveTemplate("roomId", roomId).request(MediaType.APPLICATION_JSON);
-                response = builder.put(Entity.json(registrationPayload.build()));
-                break;
-            }
-            default:{
-                throw new IllegalStateException("Bad enum value "+mode.name());
-            }
+        } catch (RuntimeException pe) {
+            Log.log(Level.SEVERE, "Error registering room provider : {0}", pe.toString());
+            // Unable to connect to map w/in reasonable time
+            return MAP_UNAVAILABLE;
         }
 
         RegistrationResult r = new RegistrationResult();
