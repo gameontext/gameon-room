@@ -7,7 +7,7 @@ fi
 
 export CONTAINER_NAME=recroom
 
-SERVER_PATH=/opt/ibm/wlp/usr/servers/defaultServer
+SERVER_PATH=/opt/ol/wlp/usr/servers/defaultServer
 
 if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   echo Setting up etcd...
@@ -54,4 +54,4 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
   wget https://github.com/ibm-messaging/message-hub-samples/raw/master/java/message-hub-liberty-sample/lib-message-hub/messagehub.login-1.0.0.jar
 fi
 
-exec /opt/ibm/wlp/bin/server run defaultServer
+exec /opt/ol/wlp/bin/server run defaultServer
