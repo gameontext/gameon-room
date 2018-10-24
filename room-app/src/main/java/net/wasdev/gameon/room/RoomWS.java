@@ -31,12 +31,18 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
 import javax.websocket.Session;
 
+import org.eclipse.microprofile.opentracing.Traced;
+import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+
 import net.wasdev.gameon.room.engine.Room;
 
 /**
  * WebSocket endpoint for player's interacting with the room
  */
 public class RoomWS extends Endpoint {
+
     private final Room room;
     private final LifecycleManager.SessionRoomResponseProcessor srrp;
     private Map<Session, MessageHandler.Whole<String>> handlersBySession = new ConcurrentHashMap<Session, MessageHandler.Whole<String>>();
@@ -66,6 +72,17 @@ public class RoomWS extends Endpoint {
     }
 
     @Override
+    @Traced
+    @Timed(name = "websocket_onOpen_timer",
+        reusable = true,
+        tags = "label=websocket")
+     @Counted(name = "websocket_onOpen_count",
+         monotonic = true,
+         reusable = true,
+         tags = "label=websocket")
+     @Metered(name = "websocket_onOpen_meter",
+         reusable = true,
+         tags = "label=websocket")
     public void onOpen(final Session session, EndpointConfig ec) {
         Log.log(Level.FINE,this, "onOpen called against room " + this.room.getRoomId());
 
@@ -123,6 +140,17 @@ public class RoomWS extends Endpoint {
     }
 
     @Override
+    @Traced
+    @Timed(name = "websocket_onClose_timer",
+        reusable = true,
+        tags = "label=websocket")
+     @Counted(name = "websocket_onClose_count",
+         monotonic = true,
+         reusable = true,
+         tags = "label=websocket")
+     @Metered(name = "websocket_onClose_meter",
+         reusable = true,
+         tags = "label=websocket")
     public void onClose(Session session, CloseReason reason) {
         // (lifecycle) Called when the connection is closed, treat this as the
         // player has left the room
@@ -150,6 +178,17 @@ public class RoomWS extends Endpoint {
         }
     }
 
+    @Traced
+    @Timed(name = "receiveMessage_timer",
+        reusable = true,
+        tags = "label=websocket")
+     @Counted(name = "receiveMessage_count",
+         monotonic = true,
+         reusable = true,
+         tags = "label=websocket")
+     @Metered(name = "receiveMessage_meter",
+         reusable = true,
+         tags = "label=websocket")
     public void receiveMessage(String message, Session session) throws IOException {
         Log.log(Level.FINE, this, "ROOMX: [{0}:{1}] sess[{2}:{3}] : {4}", this.hashCode(),this.room.getRoomId(),session.hashCode(),session.getId(),message);
         String[] contents = Message.splitRouting(message);
@@ -190,6 +229,17 @@ public class RoomWS extends Endpoint {
     }
 
     // add a new player to the room
+    @Traced
+    @Timed(name = "addNewPlayer_timer",
+        reusable = true,
+        tags = "label=websocket")
+     @Counted(name = "addNewPlayer_count",
+         monotonic = true,
+         reusable = true,
+         tags = "label=websocket")
+     @Metered(name = "addNewPlayer_meter",
+         reusable = true,
+         tags = "label=websocket")
     private void addNewPlayer(Session session, String json) throws IOException {
 
         JsonObject msg = Json.createReader(new StringReader(json)).readObject();
@@ -202,6 +252,17 @@ public class RoomWS extends Endpoint {
         room.command(userid, "look");
     }
 
+    @Traced
+    @Timed(name = "removePlayer_timer",
+        reusable = true,
+        tags = "label=websocket")
+     @Counted(name = "removePlayer_count",
+         monotonic = true,
+         reusable = true,
+         tags = "label=websocket")
+     @Metered(name = "removePlayer_meter",
+         reusable = true,
+         tags = "label=websocket")
     private void removePlayer(Session session, String json) throws IOException {
         JsonObject msg = Json.createReader(new StringReader(json)).readObject();
         String userid = Message.getValue(msg.get(Constants.USERID));
@@ -210,6 +271,17 @@ public class RoomWS extends Endpoint {
     }
 
     @Override
+    @Traced
+    @Timed(name = "websocket_onError_timer",
+        reusable = true,
+        tags = "label=websocket")
+     @Counted(name = "websocket_onError_count",
+         monotonic = true,
+         reusable = true,
+         tags = "label=websocket")
+     @Metered(name = "websocket_onError_meter",
+         reusable = true,
+         tags = "label=websocket")
     public void onError(Session session, Throwable thr) {
         // (lifecycle) Called if/when an error occurs and the connection is
         // disrupted
