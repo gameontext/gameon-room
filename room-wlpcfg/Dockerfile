@@ -1,4 +1,4 @@
-FROM gameontext/docker-liberty-custom:master-9
+FROM gameontext/docker-liberty-custom:master-14
 
 ENV SERVERDIRNAME room
 
