@@ -1,7 +1,7 @@
 var websocket = null;
 var websocketRoot = "wss://" + window.document.location.host + "/rooms/ws/";
 var websocketUrl = websocketRoot + "Basement";
-var healthUrl = "https://" + window.document.location.host + "/health";
+var healthUrl = "https://" + window.document.location.host + "/rooms/health";
 
 var inputMessage = document.getElementById("inputmessage");
 var connectButton = document.getElementById("connectButton");
