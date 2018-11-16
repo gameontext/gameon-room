@@ -1,5 +1,5 @@
 #!/bin/bash
-c
+
 export CONTAINER_NAME=recroom
 
 SERVER_PATH=/opt/ol/wlp/usr/servers/defaultServer
@@ -19,6 +19,9 @@ if [ "$ETCDCTL_ENDPOINT" != "" ]; then
       RC=$?
   done
   echo "etcdctl returned sucessfully, continuing"
+
+  mkdir -p /etc/cert
+  etcdctl get /proxy/third-party-ssl-cert > /etc/cert/cert.pem
 
   export RECROOM_SERVICE_URL=$(etcdctl get /room/service)
   export MAP_SERVICE_URL=$(etcdctl get /room/mapurl)
