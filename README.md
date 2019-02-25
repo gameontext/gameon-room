@@ -22,11 +22,7 @@ MicroProfile is an open platform that optimizes the Enterprise Java for microser
     The application uses the `Timed`, `Counted` and `Metered` metrics. To access these metrics, go to https://localhost:9445/metrics.
     The Metrics feature is configured with SSL and can only be accessed through https. You will need to login using the username and password configured in the server.xml. The default values are `admin` and `admin`.
 
-2. [MicroProfile Open Tracing](https://github.com/eclipse/microprofile-opentracing) -  This feature enables distributed tracing. It analyzes the transaction flow and allows for custom tracing of JAX-RS and non-JAX-RS methods.
-
-    We are using [Zipkin](https://zipkin.io/) as the distributed tracing system. It is setup to run through the root project's Docker Compose, and can be accessed at https://localhost:9411.
-
-3. [MicroProfile Fault Tolerance](https://github.com/eclipse/microprofile-fault-tolerance) - These features help reduce the impact of failure and ensure continued operation of services. This project uses Fallback, Retry, and Timeout.
+2. [MicroProfile Fault Tolerance](https://github.com/eclipse/microprofile-fault-tolerance) - These features help reduce the impact of failure and ensure continued operation of services. This project uses Fallback, Retry, and Timeout.
 
 ## Contributing
 
