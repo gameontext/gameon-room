@@ -162,7 +162,7 @@ public class LogView extends HttpServlet {
 
                             String expectedPassword;
                             try {
-                                expectedPassword = (String) new InitialContext().lookup("registrationSecret");
+                                expectedPassword = (String) new InitialContext().lookup("mapApiKey");
                             } catch (NamingException e) {
                                 ((HttpServletResponse) response).sendError(HttpServletResponse.SC_FORBIDDEN,
                                         "unable to obtain pw to auth against");
