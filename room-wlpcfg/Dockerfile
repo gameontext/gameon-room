@@ -4,6 +4,7 @@ ENV SERVERDIRNAME room
 
 COPY ./startup.sh /opt/startup.sh
 ADD ./servers/gameon-room /opt/ol/wlp/usr/servers/defaultServer/
+RUN mkdir -p /opt/ol/wlp/usr/servers/defaultServer/resources/security
 
 CMD ["/opt/startup.sh"]
 
