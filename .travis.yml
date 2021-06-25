@@ -6,13 +6,13 @@ language: java
 jdk:
 - openjdk8
 before_install:
-- bash <(curl -s https://raw.githubusercontent.com/gameontext/gameon/master/build/updateTravisDocker.sh)
+- bash <(curl -s https://raw.githubusercontent.com/gameontext/gameon/main/build/updateTravisDocker.sh)
 script:
 - ./gradlew build
 after_success:
 - echo "TRAVIS_BRANCH='$TRAVIS_BRANCH'"
-- bash <(curl -s https://raw.githubusercontent.com/gameontext/gameon/master/build/dockerhub.sh)
-- bash <(curl -s https://raw.githubusercontent.com/gameontext/gameon/master/build/launchBuild.sh)
+- bash <(curl -s https://raw.githubusercontent.com/gameontext/gameon/main/build/dockerhub.sh)
+- bash <(curl -s https://raw.githubusercontent.com/gameontext/gameon/main/build/launchBuild.sh)
 notifications:
   slack:
     secure: c1znYjwPcdjv/mGT+D1ZIoh6F5ocPzAXyFRCRi+hwQYqB2CXBc+FSkwMm+KRie+xEIuDlCcg+851vZrkQ42ZGPubCnsavbR1ab8K7xdX9yLqkRCjGocsXjo8ben6VDHnJVT/9ZGBVCdEacwZlWYrV+2zKtJU4xzI0DeQClvqjxuQXx9qyhtqRIMXFS5fayKX7EhFl4XGWXPVVzxzfEfivhn8e+7Rc/OB1Un+9MsjVTY4s/a55p80JBofQl4CeV+vtZjgBSDNEM/CV7npX+6hAKOCk/6mvse/kCUMyErojGP9StR2IIpIbCyn6rH7o79h8HEsckNeoQy5ByzvZH/B31hm7UR6nLaqf4GnhsMYMenC3Ta8d2S7t11/gYnNA/8E6iOINbgfZjT0mo3wVJKvnOCH3hlo7E0yDt4jiPvwJJ8OwOHV9gg7uN4p6ce7nEe2Wr+L0qYODa084tQ/jE9z35SUkMr3hJp92sQBa/HmH+aJ9z7ZZlU1+D9aTkAvjPstty/VFhr9uxVTIvQVbnzcJwt3cBrdOkRCngwfe+3X0py+/vg67osu0WLmW/rkmKdfTUTL8E02BTJ6qBBBucs+3DUFHMqVPezYmmIK6c1jjxoesd2s2FoUkDPbIoo+JP//hNlwNWUc4LZEkM3Qwym5WXNLB/WjfBH374v+GhaFXbk=
